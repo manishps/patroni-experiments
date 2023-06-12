@@ -1,14 +1,8 @@
 # etcd
 
-`start.sh` stores the logic for actually booting up etcd. Notice, however, that this script references a variable THIS_NAME, that it does not define. That is because you are expected to define it elsewhere. I recommend creating `runner.sh` containing
+`start.sh` is a helpful script that runs `etcd` using the necessary configurations. NOTE: You must provide a `.config` file (matching the structure of `.config.example`) with the names and hosts in your system. You must also supply a `../.THIS_NAME` file (which exists in root of project, mirroring `.THIS_NAME.example`) to declare which machine this node is.
 
-```
-THIS_NAME=pe[1|2|3]
-export THIS_NAME
-sh start.sh
-```
-
-and using `./runner.sh` to actually run it. You can also just manually export it
+It's important to have these ignore files so that different machines can join as different entities while still getting core logic from the same place in source control.
 
 **IMPORTANT**
 

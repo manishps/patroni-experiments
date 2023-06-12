@@ -1,12 +1,14 @@
 TOKEN=patroni-experiments
 CLUSTER_STATE=new
-NAME_1=pe1
-NAME_2=pe2
-NAME_3=pe3
-HOST_1=10.51.140.91
-HOST_2=10.51.140.76
-HOST_3=10.51.140.84
+NAME_1=$(cat ../.config/.NAME_1)
+NAME_2=$(cat ../.config/.NAME_2)
+NAME_3=$(cat ../.config/.NAME_3)
+HOST_1=$(cat ../.config/.HOST_1)
+HOST_2=$(cat ../.config/.HOST_2)
+HOST_3=$(cat ../.config/.HOST_3)
 CLUSTER=${NAME_1}=http://${HOST_1}:2380,${NAME_2}=http://${HOST_2}:2380,${NAME_3}=http://${HOST_3}:2380
+
+THIS_NAME=$(cat ../.THIS_NAME)
 
 if [[ "${THIS_NAME}" = "${NAME_1}" ]];
 then
