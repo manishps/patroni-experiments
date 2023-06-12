@@ -1,6 +1,7 @@
 ###### OUR STUFF ######
 
 data/
+etcd/runner.sh
 
 ####### AUTO-FILLED PYTHON STUFF BELOW ######
 # Byte-compiled / optimized / DLL files
