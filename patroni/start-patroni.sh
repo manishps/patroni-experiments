@@ -1,1 +1,1 @@
-./make_conf.sh && patroni conf.yml
+./make-conf.sh && patroni conf.yml

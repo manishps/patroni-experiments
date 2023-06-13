@@ -1,10 +1,12 @@
 ###### OUR STUFF ######
 
-data/
-etcd/runner.sh
 .THIS_NAME
 .config
+data/
+etcd/runner.sh
+haproxy/conf.cfg
 patroni/conf.yml
+
 
 ####### AUTO-FILLED PYTHON STUFF BELOW ######
 # Byte-compiled / optimized / DLL files
