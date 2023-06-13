@@ -1,5 +1,11 @@
 cp TEMPLATE.yml conf.yml
 THIS_NAME=$(cat ../.THIS_NAME)
+NAME_1=$(cat ../.config/.NAME_1)
+NAME_2=$(cat ../.config/.NAME_2)
+NAME_3=$(cat ../.config/.NAME_3)
+HOST_1=$(cat ../.config/.HOST_1)
+HOST_2=$(cat ../.config/.HOST_2)
+HOST_3=$(cat ../.config/.HOST_3)
 if [[ "${THIS_NAME}" = "${NAME_1}" ]];
 then
     THIS_IP=${HOST_1}
