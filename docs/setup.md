@@ -69,10 +69,10 @@ Add another repo
 sudo yum install -y https://download.postgresql.org/pub/repos/yum/reporpms/EL-7-x86_64/pgdg-redhat-repo-latest.noarch.rpm
 ```
 
-Actually install
+Actually install last things
 
 ```
-sudo yum -y install postgresql15-server
+sudo yum -y install postgresql15-server python-devel postgresql-devel
 ```
 
 Fix PATH. Open `~/.bashrc` and add

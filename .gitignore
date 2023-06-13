@@ -4,6 +4,7 @@ data/
 etcd/runner.sh
 .THIS_NAME
 .config
+patroni/conf.yml
 
 ####### AUTO-FILLED PYTHON STUFF BELOW ######
 # Byte-compiled / optimized / DLL files

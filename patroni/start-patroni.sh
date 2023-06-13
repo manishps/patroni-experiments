@@ -1,0 +1,1 @@
+./make_conf.sh && patroni conf.yml
