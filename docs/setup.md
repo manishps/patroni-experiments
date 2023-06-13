@@ -112,6 +112,8 @@ etcd            2379/tcp                # etcd client
 etcd            2380/tcp                # etcd peers
 ...
 pg              5432/tcp                # Postgres
+...
+patroni         8009/tcp                # Patroni REST Api
 ```
 
 Then we need to allow them on the firewall
@@ -120,5 +122,7 @@ Then we need to allow them on the firewall
 sudo firewall-cmd --zone=public --add-port 2379/tcp --permanent
 sudo firewall-cmd --zone=public --add-port 2380/tcp --permanent
 sudo firewall-cmd --zone=public --add-port 5432/tcp --permanent
+sudo firewall-cmd --zone=public --add-port 5433/tcp --permanent
+sudo firewall-cmd --zone=public --add-port 8009/tcp --permanent
 sudo firewall-cmd --reload
 ```
