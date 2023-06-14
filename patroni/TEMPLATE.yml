@@ -50,10 +50,14 @@ postgresql:
   parameters:
     unix_socket_directories: '..'
   basebackup:
-      - verbose
-      - max-rate: 100M
+    - verbose
+    - max-rate: 100M
 
 tags:
-    nofailover: false
-    noloadbalance: false
-    clonefrom: false
+  nofailover: false
+  noloadbalance: false
+  clonefrom: false
+
+log:
+  level: DEBUG
+  dir: logs

@@ -1,1 +1,5 @@
-source ../venv/bin/activate && ./make-conf.sh && patroni conf.yml
+source ../venv/bin/activate &&
+rm -rf logs &&
+mkdir logs &&
+./make-conf.sh &&
+patroni conf.yml
