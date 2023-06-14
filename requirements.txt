@@ -1,5 +1,8 @@
+certifi==2023.5.7
+charset-normalizer==3.1.0
 click==8.0.4
 dnspython==2.2.1
+idna==3.4
 importlib-metadata==4.8.3
 patroni==3.0.2
 prettytable==2.5.0
@@ -8,6 +11,7 @@ psycopg2-binary==2.9.6
 python-dateutil==2.8.2
 python-etcd==0.4.5
 PyYAML==6.0
+requests==2.31.0
 six==1.16.0
 typing_extensions==4.1.1
 urllib3==1.26.16

@@ -12,9 +12,11 @@ class DataGenerator():
     :param 
     """
     def __init__(self, freq=0.1, rate=1.0, table_name="dummy"):
+        with open("../.config/.HOST_4", "r") as fin:
+            proxy_host = fin.readline()
         self.conn = psycopg2.connect(
                         database="postgres",
-                        host="10.51.140.34",
+                        host=proxy_host,
                         user="postgres",
                         password="password",
                         port="5000")
