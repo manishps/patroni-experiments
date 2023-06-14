@@ -8,6 +8,7 @@ haproxy/conf.cfg
 patroni/conf.yml
 patroni/logs
 data_generator/payload.json
+.vscode
 
 
 ####### AUTO-FILLED PYTHON STUFF BELOW ######
