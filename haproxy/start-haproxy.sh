@@ -1,1 +1,1 @@
-./make-conf.sh && haproxy -f conf.cfg
+source ../venv/bin/activate && ./make-conf.sh && haproxy -f ./conf.cfg
