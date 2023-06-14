@@ -71,6 +71,7 @@ class DataGenerator():
         The function run in the background to write at a constant rate
         """
         while self.is_writing:
+            start_time = datetime.now()
             with self.conn.cursor() as cur:
                 now = datetime.utcnow()
                 now = str(now)
@@ -81,7 +82,8 @@ class DataGenerator():
                     ('{now}', '{self.payload}')
                 """)
             self.conn.commit()
-            time.sleep(self.freq)
+            end_time = datetime.now()
+            time.sleep(self.freq - (end_time - start_time).total_seconds())
                 
     
     def start_writing(self):
@@ -103,7 +105,7 @@ class DataGenerator():
 
 
 if __name__ == "__main__":
-    dg = DataGenerator(freq=0.1, rate=1.0)
+    dg = DataGenerator(freq=0.5, rate=1.0)
     dg.reset()
     dg.start_writing()
     time.sleep(10)
