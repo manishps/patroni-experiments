@@ -124,5 +124,6 @@ sudo firewall-cmd --zone=public --add-port 2380/tcp --permanent
 sudo firewall-cmd --zone=public --add-port 5432/tcp --permanent
 sudo firewall-cmd --zone=public --add-port 5433/tcp --permanent
 sudo firewall-cmd --zone=public --add-port 8009/tcp --permanent
+sudo firewall-cmd --zone=public --add-port 5000/tcp --permanent
 sudo firewall-cmd --reload
 ```
