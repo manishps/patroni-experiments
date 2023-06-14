@@ -6,6 +6,7 @@ data/
 etcd/runner.sh
 haproxy/conf.cfg
 patroni/conf.yml
+data_generator/payload.json
 
 
 ####### AUTO-FILLED PYTHON STUFF BELOW ######
