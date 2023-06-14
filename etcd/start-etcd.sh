@@ -22,6 +22,7 @@ else
     fi
 fi
 
+source ../venv/bin/activate &&
 etcd --data-dir=data --name ${THIS_NAME} \
 	--initial-advertise-peer-urls http://${THIS_IP}:2380 \
 	--listen-peer-urls http://${THIS_IP}:2380 \
