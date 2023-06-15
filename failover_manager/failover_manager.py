@@ -23,7 +23,7 @@ class FailoverManager:
         with open ("../.config/.HOST_4", "r") as fin:
             self.host4 = fin.readline()
 
-    def get_nodes(self) -> tuple[Node, list[Node]]:
+    def get_nodes(self) -> "tuple[Node, list[Node]]":
         """
         Returns the host of the current leader
         """
@@ -54,7 +54,7 @@ class FailoverManager:
         selecting a replica to promote
         """
         leader, replicas = self.get_nodes()
-        promote = random.choice(replicas)
+        promote = sorted(replicas)[0]
         resp = requests.post(f"http://{leader.host}:8009/failover", json={
             "candidate": promote.name
         })

@@ -48,7 +48,7 @@ class POLDemoteSelf(Event):
 
 class POLKeyReleased(Event):
     event = "key_released"
-    marker = "Leader key released"
+    marker = "key released"
 
 class POLClosePGConn(Event):
     event = "close_pg_conn"
@@ -65,21 +65,21 @@ class POLEstablishingNewConn(Event):
 POLEvent = Union[
     POLFailoverReceived,
     POLCandidatePing,
-    POLDemoteSelf,
     POLCandidatePing,
+    POLDemoteSelf,
     POLKeyReleased,
     POLClosePGConn,
-    POLAcceptingConns,
+    # POLAcceptingConns,
     POLEstablishingNewConn
 ]
 POLOrder = [
     POLFailoverReceived,
     POLCandidatePing,
-    POLDemoteSelf,
     POLCandidatePing,
+    POLDemoteSelf,
     POLKeyReleased,
     POLClosePGConn,
-    POLAcceptingConns,
+    # POLAcceptingConns,
     POLEstablishingNewConn
 ]
 
