@@ -5,6 +5,8 @@
 data/
 etcd/runner.sh
 haproxy/conf.cfg
+haproxy/test.out
+haproxy/log.out
 patroni/conf.yml
 patroni/logs
 data_generator/payload.json
