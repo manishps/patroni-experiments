@@ -9,6 +9,7 @@ from log_scraper.events import Event2Dict
 
 app = Flask(__name__)
 
+
 @app.route("/exec_command/<string:command>", methods=["POST"])
 def exec_command(command: str):
     os.system("cd .. && " + command)
@@ -28,4 +29,5 @@ def get_logs(type: str):
     clean_events = [Event2Dict(e) for e in raw_events]
     return jsonify({"data": clean_events})
 
-app.run(debug=True, port=3000)
+if __name__ == '__main__':
+    app.run(host="0.0.0.0", port=3000)
