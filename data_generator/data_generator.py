@@ -147,6 +147,9 @@ class DataGenerator():
     def write_for_x_seconds_then_stop(self, x: float):
         self.is_starting = None
         self.end_seconds = x
+        if self.writing_thread:
+            self.writing_thread.join()
+            self.writing_thread = None
 
 
 if __name__ == "__main__":
