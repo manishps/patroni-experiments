@@ -59,6 +59,7 @@ class FailoverManager:
             "candidate": promote.name
         })
         if resp.status_code != 200:
+            print(resp.text)
             raise Exception("Failover failed")
     
     def block_until_back(self):
