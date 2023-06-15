@@ -12,9 +12,24 @@ class Runner:
     failover manager to generate results for patroni experiments
     """
     def __init__(self):
+        # Load the addresses of the machines
+        with open ("../.config/.HOST_1", "r") as fin:
+            self.host1 = fin.readline()
+        with open ("../.config/.HOST_2", "r") as fin:
+            self.host2 = fin.readline()
+        with open ("../.config/.HOST_3", "r") as fin:
+            self.host3 = fin.readline()
+        with open ("../.config/.HOST_4", "r") as fin:
+            self.host4 = fin.readline()
+
         self.dg = DataGenerator(freq=0.2, rate=0.5)
         self.dg.reset()
         self.fm = FailoverManager()
+    
+    def reset_processes(self):
+        """
+        Reset
+        """
     
     def run(self):
         """

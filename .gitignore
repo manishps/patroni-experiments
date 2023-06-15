@@ -10,6 +10,7 @@ haproxy/log.out
 patroni/conf.yml
 patroni/logs
 data_generator/payload.json
+runner/payload.json
 .vscode
 
 
