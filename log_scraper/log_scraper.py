@@ -1,4 +1,8 @@
-from events import Event, POLEvent, POLOrder, PNLEvent, PNLOrder
+import sys
+
+sys.path.append("..")
+
+from log_scraper.events import Event, POLEvent, POLOrder, PNLEvent, PNLOrder, Event2Dict
 from io import TextIOWrapper
 from typing import List
 from datetime import datetime
@@ -26,10 +30,10 @@ def scrape_PNL_events(fin: TextIOWrapper) -> List[PNLEvent]:
     for ix, line in enumerate(fin.readlines()):
         if follow.marker in line:
             last_follow_ix = ix
+    fin.seek(0)
     # Then we can just speedrun sequential
     eix = 0
     for ix, line in enumerate(fin.readlines()):
-        print(line)
         if ix < last_follow_ix:
             continue
         if eix >= len(PNLOrder):

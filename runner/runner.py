@@ -28,7 +28,7 @@ class Runner:
     
     def reset_processes(self):
         """
-        Reset
+        Connect to the 
         """
     
     def run(self):

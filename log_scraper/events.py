@@ -34,6 +34,12 @@ class Event(NamedTuple):
     marker: str
     timestamp: datetime
 
+def Event2Dict(event: Event) -> "dict[str, Union[str, datetime]]":
+    return {
+        "event": event.event,
+        "timestamp": event.timestamp
+    }
+
 class POLFailoverReceived(Event):
     event = "failover_received"
     marker = "received failover request"
@@ -97,7 +103,7 @@ class PNLCleanUp(Event):
 
 class PNLPromoteSelf(Event):
     event = "promote_self"
-    marker = "promoted self to leader by acquiring session lock server"
+    marker = "promoted self to leader by acquiring session lock"
 
 class PNLClearRewindState(Event):
     event = "clear_rewind"
