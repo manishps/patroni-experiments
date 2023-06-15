@@ -26,9 +26,11 @@ def scrape_PNL_events(fin: TextIOWrapper) -> List[PNLEvent]:
     for ix, line in enumerate(fin.readlines()):
         if follow.marker in line:
             last_follow_ix = ix
+    fin.seek(0)
     # Then we can just speedrun sequential
     eix = 0
     for ix, line in enumerate(fin.readlines()):
+        print(line)
         if ix < last_follow_ix:
             continue
         if eix >= len(PNLOrder):

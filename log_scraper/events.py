@@ -97,7 +97,7 @@ class PNLCleanUp(Event):
 
 class PNLPromoteSelf(Event):
     event = "promote_self"
-    marker = "promoted self to leader by acquiring session lock server"
+    marker = "promoted self to leader by acquiring session lock"
 
 class PNLClearRewindState(Event):
     event = "clear_rewind"
