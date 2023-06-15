@@ -5,9 +5,9 @@ api:
 	cd runner && python3 node_server.py&
 
 node-etcd:
-	cd etcd && ./start-etcd.sh
+	cd etcd && rm -rf data && ./start-etcd.sh
 
 node-patroni:
-	cd patroni && ./start-patroni.sh 
+	cd patroni && rm -rf data && ./start-patroni.sh 
 
 
