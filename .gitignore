@@ -11,6 +11,8 @@ patroni/conf.yml
 patroni/logs
 data_generator/payload.json
 runner/payload.json
+runner/PNL_data.json
+runner/POL_data.json
 .vscode
 
 
