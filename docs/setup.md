@@ -2,6 +2,15 @@
 
 This document outlines how setup this repo across three VMs in Prism to play around with yourself.
 
+### [1. VM Creation](#vm-creation)
+[1.1 Ignored Files](#ignored-files)
+
+### [2. Installing Tools](#installing-tools)
+[2.1 Postgres](#postgres)
+[2.2 Python + Other](#other-dependencies)
+
+### [3. Opening Ports](#opening-ports)
+
 ## VM Creation
 
 You'll need to make three VMs. Fields to specify while making each VM:
@@ -44,6 +53,16 @@ to the end of the file. You will then need to reboot.
 ```
 
 Once installation and setup complete, you can access however you'd like. (I personally use remote connection through VS Code.)
+
+### Ignored Files
+
+At this point, you'll likely want to set up `git` on the machine and clone this repo. This is left to the reader.
+
+One important thing to note, however, is that certain configuration files are hidden from git source but expected to be present.
+
+- First, create a copy of `.THIS_NAME.example` and rename the file `.THIS_NAME` in the root directory. Each VM should have a unique name in this file, just a simple string should do.
+- Then, create a copy of the entire `.config.example` folder. **NOTE:** For _each_ VM, you should list both the host (IP) and unique name you gave it in `.THIS_NAME`. This is how machines will create configuration files that boot patroni, so it's important this is done correctly.
+
 
 ## Installing Tools
 
