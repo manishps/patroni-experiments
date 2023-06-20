@@ -10,4 +10,5 @@ node-etcd:
 node-patroni:
 	cd patroni && rm -rf data && ./start-patroni.sh 
 
-
+experiment:
+	cd runner && python3 exprunner.py

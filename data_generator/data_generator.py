@@ -45,6 +45,10 @@ class DataGenerator():
     
     def block_for_writable_connection(self, initial=False):
         """
+        A helper function which blocks until it's able to establish a
+        connection to the database that is writable. Useful because during
+        the recovery process the new leader spends time in a read-only state
+        before continuing back to normal.
         """
         DELAY = 0.1
         if not initial and self.conn:
