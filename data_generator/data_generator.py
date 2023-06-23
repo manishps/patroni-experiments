@@ -155,10 +155,3 @@ class DataGenerator():
             self.writing_thread.join()
             self.writing_thread = None
 
-
-if __name__ == "__main__":
-    dg = DataGenerator(freq=0.5, rate=1.0)
-    dg.reset()
-    dg.start_writing()
-    time.sleep(10)
-    dg.stop_writing()

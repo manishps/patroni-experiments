@@ -53,7 +53,7 @@ class Runner:
         self.issue_command(host, "rm patroni/logs/patroni.log")
         time.sleep(1.0) # Give process time to die and free ports
     
-    def reset_nodes(self):
+    def reset_nodes(self, clear_data = True):
         """
         Helper function to reset the nodes, hopefully in order, so that
         pe1 is first leader
@@ -64,6 +64,8 @@ class Runner:
         
         # Start etcd on all the nodes
         for host in [self.host1, self.host2, self.host3]:
+            if clear_data:
+                self.issue_command(host, "make reset-data")
             self.issue_command(host, "make node-etcd&")
         
         # Start patroni only on node 1 and wait for it to claim leader
@@ -92,11 +94,11 @@ class Runner:
         time.sleep(1.0)
         self.issue_command(self.host4, "make proxy&")
 
-    def reset(self):
+    def reset(self, clear_data = True):
         """
         Resets the nodes and the proxy
         """
-        self.reset_nodes()
+        self.reset_nodes(clear_data=clear_data)
         self.reset_proxy()
     
     def do_work(self):

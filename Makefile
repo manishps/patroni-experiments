@@ -4,6 +4,9 @@ proxy:
 api:
 	source venv/bin/activate && cd runner && python3 node_server.py&
 
+reset-data:
+	rm -rf etcd/data && rm -rf patroni/data
+
 node-etcd:
 	cd etcd && rm -rf data && ./start-etcd.sh
 
@@ -12,3 +15,6 @@ node-patroni:
 
 experiment:
 	cd runner && python3 exprunner.py
+
+viewer:
+	cd runner && python3 viewer.py

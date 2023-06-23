@@ -13,7 +13,7 @@ class Viewer:
     
     def view(self):
         try:
-            self.runner.reset()
+            self.runner.reset(clear_data=False)
             print("System live!")
         except:
             print("Shutting down")
