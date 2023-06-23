@@ -74,14 +74,50 @@ Our experiment is quite straightforward given the above setup. We simulate a bus
 
 ## Results
 
-Be sure to add how the shutdown happens (from pctl logs)
+### Client Perspective
 
-Also add from the client's perspective (inserting at X rate, after dust settles there is Y data missing)
+The most important thing to measure in our experiments is...
+> How much data did we lose because of the failure?
+
+Our first graph below, shows just that for the standard configuration. For this experiment, we had client writing thread attempt to write 100KB to the DB every tenth of a second.
+
+![Client Result](images/ClientPerspective.png)
+
+Each circle represents a timestamped entry that made it to the database from the writing thread on our local client. The line in the middle of the figure represents the portion of the time when our writing client was attempting to write to the database but was unsuccessful because of the failover.
+
+Naturally, our next question should be...
+> What happens during these five seconds?
+
+### Peeking Under the Hood
+
+Luckily for us, all the services we've used in this setup have detailed and highly configurable logs. After completing the experiment described above, we can use the flask api to scrape the Patroni, Postgres, and etcd logs to get a granular view of our system.
+
+![Client Result](images/SecondTL.png)
+
+The above graph shows the major events broken up into two categories vertically: things that have to happen in the old primary, and things that have to happen in the new primary.
+
+***Old Primary***
+
+- Failover received - The request is received to crash/shut down gracefully
+- Candidtate ping(s)
 
 ## Future Work
 
+The beauty of this set up, and NDB provisioned HA database clusters in general, is that it's modular and easy to use. We can orchestrate complex experiments from our local computer without any issues.
+
+Going forward, there's still much we can do to better understand the latency experienced by our users, including...
+
+- Experimenting with patroni, postgres, and haproxy configuration settings to see how they affect failover downtime and database throughput.
+- Benchmark this system to find its limits when it comes to data ingestion, number of nodes, network partitioning, etc.
+- Implement some of the more advanced optimizations mentioned earlier including balancing read requests across replicas and tiering the network structure.
+
 # Takeaways
 
+Thanks for reading! I hope that you've learned something new by reading this article, including (but not limited to)
+
+- How to setup a HA database cluster using Postgres and Patroni
+- What a failover is, and how modern systems ensure near 100% uptime
+- The main events that eat up time during a failover in a simple system.
 
 
 

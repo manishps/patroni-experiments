@@ -27,44 +27,74 @@ PNL_EventType = Literal[
     "first_lead",
 ]
 
-EventType = Union[POL_EventType, PNL_EventType]
+### POSTGRES EVENTS ###
+# Old leader events
+GOL_EventType = Literal[
+    "ready_for_writes",
+    "shutdown_received",
+    "shutdown_complete",
+    "restarting",
+    "ready_for_reads",
+]
+# New leader events
+GNL_EventType = Literal[
+    "entering_standby_mode",
+    "ready_for_reads",
+    "replication_terminated",
+    "promote_received",
+    "new_timeline",
+    "ready_for_writes"
+]
+
+# Common event stuff
+
+EventType = Union[POL_EventType, PNL_EventType, GOL_EventType, GNL_EventType]
 
 class Event(NamedTuple):
     event: EventType
+    source: Literal["patroni", "postgres"]
+    timestamp: str
+    readable: str
     marker: str
-    timestamp: datetime
 
 def Event2Dict(event: Event) -> "dict[str, Union[str, datetime]]":
     return {
         "event": event.event,
-        "timestamp": event.timestamp
+        #"source": event.source,
+        "timestamp": event.timestamp,
+        #"readable": event.readable
     }
 
-class POLFailoverReceived(Event):
+# Patroni event classes
+
+class PatroniEvent(Event):
+    source = "patroni"
+
+class POLFailoverReceived(PatroniEvent):
     event = "failover_received"
     marker = "received failover request"
 
-class POLCandidatePing(Event):
+class POLCandidatePing(PatroniEvent):
     event = "candidate_ping"
     marker = "Got response from"
 
-class POLDemoteSelf(Event):
+class POLDemoteSelf(PatroniEvent):
     event = "demote_self"
     marker = "Demoting self (graceful)"
 
-class POLKeyReleased(Event):
+class POLKeyReleased(PatroniEvent):
     event = "key_released"
     marker = "key released"
 
-class POLClosePGConn(Event):
+class POLClosePGConn(PatroniEvent):
     event = "close_pg_conn"
     marker = "closed patroni connection to the postgresql cluster"
 
-class POLAcceptingConns(Event):
+class POLAcceptingConns(PatroniEvent):
     event = "accepting_conns"
     marker = "accepting connections"
 
-class POLEstablishingNewConn(Event):
+class POLEstablishingNewConn(PatroniEvent):
     event = "establishing_new_conn"
     marker = "establishing a new patroni connection to the postgres cluster"
 
@@ -89,27 +119,27 @@ POLOrder = [
     POLEstablishingNewConn
 ]
 
-class PNLLastFollow(Event):
+class PNLLastFollow(PatroniEvent):
     event = "last_follow"
     marker = "a secondary, and following a leader"
 
-class PNLWritingKeyToService(Event):
+class PNLWritingKeyToService(PatroniEvent):
     event = "writing_key_to_service"
     marker = "to key /service/patroni-experiments/leader"
 
-class PNLCleanUp(Event):
+class PNLCleanUp(PatroniEvent):
     event = "clean_up"
     marker = "Cleaning up failover key after acquiring leader lock"
 
-class PNLPromoteSelf(Event):
+class PNLPromoteSelf(PatroniEvent):
     event = "promote_self"
     marker = "promoted self to leader by acquiring session lock"
 
-class PNLClearRewindState(Event):
+class PNLClearRewindState(PatroniEvent):
     event = "clear_rewind"
     marker = "cleared rewind state after becoming the leader"
 
-class PNLFirstLead(Event):
+class PNLFirstLead(PatroniEvent):
     event = "first_lead"
     marker = "the leader with the lock"
 
@@ -128,4 +158,83 @@ PNLOrder = [
     PNLPromoteSelf,
     PNLClearRewindState,
     PNLFirstLead,
+]
+
+# Postgres event classes
+
+class PostgresEvent(Event):
+    source = "postgres"
+
+class GOLReadyForWrites(PostgresEvent):
+    event = "ready_for_writes"
+    marker = "database system is ready to accept connections"
+
+class GOLShutdownReceived(PostgresEvent):
+    event = "shutdown_received"
+    marker = "received fast shutdown request"
+
+class GOLShutdownComplete(PostgresEvent):
+    event = "shutdown_complete"
+    marker = "database system is shut down"
+
+class GOLRestarting(PostgresEvent):
+    event = "restarting"
+    marker = "starting PostgreSQL"
+
+class GOLReadyForReads(PostgresEvent):
+    event = "ready_for_reads"
+    marker = "database system is ready to accept read-only connections"
+
+GOLEvent = Union[
+    GOLReadyForWrites,
+    GOLShutdownReceived,
+    GOLShutdownComplete,
+    GOLRestarting,
+    GOLReadyForReads,
+]
+GOLOrder = [
+    GOLReadyForWrites,
+    GOLShutdownReceived,
+    GOLShutdownComplete,
+    GOLRestarting,
+    GOLReadyForReads,
+]
+
+class GNLEnteringStandby(PostgresEvent):
+    event = "entering_standby_mode"
+    marker = "entering standby mode"
+
+class GNLReadyForReads(PostgresEvent):
+    event = "ready_for_reads"
+    marker = "database system is ready to accept read-only connections"
+
+class GNLReplicationTerminated(PostgresEvent):
+    event = "replication_terminated"
+    marker = "replication terminated by primary server"
+
+class GNLPromoteReceived(PostgresEvent):
+    event = "promote_received"
+    marker = "received promote request"
+
+class GNLNewTimeline(PostgresEvent):
+    event = "new_timeline"
+    marker = "selected new timeline ID"
+
+class GNLReadyForWrites(PostgresEvent):
+    event = "ready_for_writes"
+    marker = "database system is ready to accept connections"
+
+GNLEvent = Union[
+    GNLEnteringStandby,
+    GNLReadyForReads,
+    GNLPromoteReceived,
+    GNLNewTimeline,
+    GNLReadyForWrites
+]
+GNLOrder = [
+    GNLEnteringStandby,
+    GNLReadyForReads,
+    GNLPromoteReceived,
+    GNLNewTimeline,
+    GNLReadyForWrites
 ]

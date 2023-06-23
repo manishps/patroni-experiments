@@ -2,11 +2,13 @@ import sys
 
 sys.path.append("..")
 
-from log_scraper.events import Event, POLEvent, POLOrder, PNLEvent, PNLOrder, Event2Dict
+from events import Event, POLEvent, POLOrder, PNLEvent, PNLOrder, \
+    GOLEvent, GOLOrder, GNLEvent, GNLOrder, Event2Dict
 from io import TextIOWrapper
 from typing import List
 from datetime import datetime
 import copy
+import json
 
 def scrape_POL_events(fin: TextIOWrapper) -> List[POLEvent]:
     result = []
@@ -17,7 +19,7 @@ def scrape_POL_events(fin: TextIOWrapper) -> List[POLEvent]:
         marker = POLOrder[eix].marker
         if marker in line:
             event = copy.deepcopy(POLOrder[eix])
-            event.timestamp = datetime.strptime(line[:23] + "000", "%Y-%m-%d %H:%M:%S,%f")
+            event.timestamp = line[:23]
             result.append(event)
             eix += 1
     return result
@@ -41,13 +43,59 @@ def scrape_PNL_events(fin: TextIOWrapper) -> List[PNLEvent]:
         marker = PNLOrder[eix].marker
         if marker in line:
             event = copy.deepcopy(PNLOrder[eix])
-            event.timestamp = datetime.strptime(line[:23] + "000", "%Y-%m-%d %H:%M:%S,%f")
+            event.timestamp = line[:23]
             result.append(event)
             eix += 1
     return result
-        
+
+def scrape_GOL_events(fin: TextIOWrapper) -> List[GOLEvent]:
+    result = []
+    eix = 0
+    for line in fin.readlines():
+        if eix >= len(GOLOrder):
+            break
+        marker = GOLOrder[eix].marker
+        if marker in line:
+            event = copy.deepcopy(GOLOrder[eix])
+            event.timestamp = line[:23]
+            result.append(event)
+            eix += 1
+    return result
+
+def scrape_GNL_events(fin: TextIOWrapper) -> List[GNLEvent]:
+    result = []
+    eix = 0
+    for line in fin.readlines():
+        if eix >= len(GNLOrder):
+            break
+        marker = GNLOrder[eix].marker
+        if marker in line:
+            event = copy.deepcopy(GNLOrder[eix])
+            event.timestamp = line[:23]
+            result.append(event)
+            eix += 1
+    return result
     
 
 if __name__ == "__main__":
-    with open("../patroni/logs/patroni.log", "r") as fin:
-        print(scrape_PNL_events(fin))
+    with open("../patroni/logs/POL.log", "r") as fin:
+        with open("../runner/POL_data.json", "w") as fout:
+            raw_events = scrape_POL_events(fin)
+            clean_events = {"data": [Event2Dict(e) for e in raw_events]}
+            fout.write(json.dumps(clean_events))
+    with open("../patroni/logs/PNL.log", "r") as fin:
+        with open("../runner/PNL_data.json", "w") as fout:
+            raw_events = scrape_PNL_events(fin)
+            clean_events = {"data": [Event2Dict(e) for e in raw_events]}
+            fout.write(json.dumps(clean_events))
+    with open("../patroni/data/GOL/log/GOL.log", "r") as fin:
+        with open("../runner/GOL_data.json", "w") as fout:
+            raw_events = scrape_GOL_events(fin)
+            clean_events = {"data": [Event2Dict(e) for e in raw_events]}
+            fout.write(json.dumps(clean_events))
+    with open("../patroni/data/GNL/log/GNL.log", "r") as fin:
+        with open("../runner/GNL_data.json", "w") as fout:
+            raw_events = scrape_GNL_events(fin)
+            clean_events = {"data": [Event2Dict(e) for e in raw_events]}
+            fout.write(json.dumps(clean_events))
+     
