@@ -2,7 +2,7 @@ proxy:
 	cd haproxy && ./start-haproxy.sh
 
 api:
-	cd runner && python3 node_server.py&
+	source venv/bin/activate && cd runner && python3 node_server.py&
 
 node-etcd:
 	cd etcd && rm -rf data && ./start-etcd.sh
