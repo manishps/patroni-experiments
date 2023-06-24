@@ -235,15 +235,18 @@ class GNLReplicationTerminated(PostgresEvent):
 
 class GNLPromoteReceived(PostgresEvent):
     event = "promote_received"
-    marker = "DB received promote request"
+    marker = "received promote request"
+    readable = "DB received promote request"
 
 class GNLNewTimeline(PostgresEvent):
     event = "new_timeline"
-    marker = "Starting new DB timeline"
+    marker = "selected new timeline ID"
+    readable = "Starting new DB timeline"
 
 class GNLReadyForWrites(PostgresEvent):
     event = "ready_for_writes"
-    marker = "DB ready for writes"
+    marker = "database system is ready to accept connections"
+    readable = "DB ready for writes"
 
 GNLEvent = Union[
     GNLEnteringStandby,
