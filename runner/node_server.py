@@ -4,7 +4,7 @@ sys.path.append("..")
 
 import os
 from flask import Flask, make_response, jsonify
-from log_scraper.log_scraper import scrape_POL_events, scrape_PNL_events
+from log_scraper.log_scraper import scrape_POL_events, scrape_PNL_events, scrape_GOL_events, scrape_GNL_events
 from log_scraper.events import Event2Dict
 
 app = Flask(__name__)
@@ -24,6 +24,12 @@ def get_logs(type: str):
     elif type == "PNL":
         with open("../patroni/logs/patroni.log", "r") as fin:
             raw_events = scrape_PNL_events(fin)
+    elif type == "GOL":
+        with open("../patroni/data/postgresql1/log/postgresql-Fri.log") as fin:
+            raw_events = scrape_GOL_events(fin)
+    elif type == "GNL":
+        with open("../patroni/data/postgresql1/log/postgresql-Fri.log") as fin:
+            raw_events = scrape_GNL_events(fin)
     else:
         return make_response("Invalid log type", 400)
     clean_events = [Event2Dict(e) for e in raw_events]

@@ -144,7 +144,19 @@ class Runner:
         self.POL_events = resp.json()["data"]
         with open("PNL_data.json", "w") as fout:
             fout.write(resp.text)
-    
+        
+        # Postgres Old Leader (GOL)
+        resp = requests.get(f"http://{self.host1}:3000/get_logs/GOL")
+        self.GOL_events = resp.json()["data"]
+        with open("GOL_data.json", "w") as fout:
+            fout.write(resp.text)
+        
+        # Postgres New Leader (GNL)
+        resp = requests.get(f"http://{self.host2}:3000/get_logs/GNL")
+        self.GOL_events = resp.json()["data"]
+        with open("GNL_data.json", "w") as fout:
+            fout.write(resp.text)
+
     def run(self):
         # pdb.set_trace()
         self.reset()
