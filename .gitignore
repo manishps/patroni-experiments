@@ -13,7 +13,8 @@ data_generator/payload.json
 results
 runner/payload.json
 # Json logs from nodes
-
+runner/GNL_data.json
+runner/GOL_data.json
 runner/PNL_data.json
 runner/POL_data.json
 .vscode
