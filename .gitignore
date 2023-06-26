@@ -12,6 +12,8 @@ patroni/logs
 data_generator/payload.json
 results
 runner/payload.json
+# Json logs from nodes
+
 runner/PNL_data.json
 runner/POL_data.json
 .vscode
