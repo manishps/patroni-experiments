@@ -83,7 +83,7 @@ Our first graph below, shows just that for the standard configuration. For this 
 
 ![Client Result](images/ClientPerspective.png)
 
-Each circle represents a timestamped entry that made it to the database from the writing thread on our local client. The line in the middle of the figure represents the portion of the time when our writing client was attempting to write to the database but was unsuccessful because of the failover.
+Each circle represents a timestamped entry that made it to the database from the writing thread on our local client. The line in the middle of the figure represents the portion of the time when our writing client was attempting to write to the database but was unsuccessful because of the failover. In this case, we missed 5 seconds of data, for a total of 5 * 100KB = 500KB.
 
 Naturally, our next question should be...
 > What happens during these five seconds?
@@ -139,6 +139,21 @@ The spefic setting we care about is `default-server inter 3s fall 3 rise 2 on-ma
 - `rise = 2` - How many health checks must a machine pass to be considered alive + healthy.
 
 Hence, the new primary may pass it's first healthcheck around the time it first has a leader heartbeat (Patroni event 10), the proxy will not consider directing traffic to it until it passes it's second health check, three seconds later.
+
+***A simple improvement***
+
+We can cut down on our failover time by making one quick configuration change for HAPRoxy. By adding `fastinter 1.5s`, we can make it so that when a new node is being promoted, after one health check succeeds, it only waits 1.5 seconds (instead of 3 seconds) until performing the next health check. Looking at the resulting timelines, this simple change can indeed cut down on failover time by over a second.
+
+**Improved Client Perspective**
+![Patroni Results](images/ImprovedClientPerspective.png)
+
+**Improved Patroni**
+![Patroni Results](images/ImprovedPatroniGraph.png)
+
+**Improved Postgres**
+![Postgres Results](images/ImprovedPostgresGraph.png)
+
+It's worth noting that because of restrictions and requirements on network delays (especially between data centers) this configuration improvement may not always work. The bigger point is that this testing framework allows us to play around with as many configurations as we'd like, and get near-instantaneous feedback about availability metrics.
 
 ## Future Work
 
