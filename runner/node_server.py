@@ -6,6 +6,7 @@ import os
 from flask import Flask, make_response, jsonify
 from log_scraper.log_scraper import scrape_POL_events, scrape_PNL_events, scrape_GOL_events, scrape_GNL_events
 from log_scraper.events import Event2Dict
+from datetime import datetime
 
 app = Flask(__name__)
 
@@ -18,6 +19,7 @@ def exec_command(command: str):
 @app.route("/get_logs/<string:type>", methods=["GET"])
 def get_logs(type: str):
     raw_events = []
+    day_str = datetime.now().strftime("%a")
     if type == "POL":
         with open("../patroni/logs/patroni.log", "r") as fin:
             raw_events = scrape_POL_events(fin)
@@ -25,10 +27,10 @@ def get_logs(type: str):
         with open("../patroni/logs/patroni.log", "r") as fin:
             raw_events = scrape_PNL_events(fin)
     elif type == "GOL":
-        with open("../patroni/data/postgresql1/log/postgresql-Fri.log") as fin:
+        with open(f"../patroni/data/postgresql1/log/postgresql-{day_str}.log") as fin:
             raw_events = scrape_GOL_events(fin)
     elif type == "GNL":
-        with open("../patroni/data/postgresql1/log/postgresql-Fri.log") as fin:
+        with open(f"../patroni/data/postgresql1/log/postgresql-{day_str}.log") as fin:
             raw_events = scrape_GNL_events(fin)
     else:
         return make_response("Invalid log type", 400)
