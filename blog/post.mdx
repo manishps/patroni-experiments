@@ -37,7 +37,7 @@ If you'd like to follow along yourself, you can follow the [detailed setup descr
 
 This setup is a simplified version of what is provided to you out of the box from the [Nutanix NDB](https://www.nutanix.dev/api_references/ndb/#/8girlyu0d2t1d-nutanix-ndb-api-v0-9) HA provisioning service.
 
-Unfamiliar with any of the above? Don't worry, the setup is relatively simple, and you'll still be able to understand the important pieces of our highly available system.
+Unfamiliar with any of the above? Don't worry, you'll still be able to follow along and learn about failover in practice.
 
 ## System Architecture
 
@@ -90,16 +90,55 @@ Naturally, our next question should be...
 
 ### Peeking Under the Hood
 
-Luckily for us, all the services we've used in this setup have detailed and highly configurable logs. After completing the experiment described above, we can use the flask api to scrape the Patroni, Postgres, and etcd logs to get a granular view of our system.
+Luckily for us, all the services we've used in this setup have detailed and highly configurable logs. After completing the experiment described above, we can use the flask api to scrape the Patroni, Postgres, and etcd logs to get a granular view of our system. Below we show timelines of the events logged by Patroni (top) and the underlying Postgres (bottom).
 
-![Client Result](images/SecondTL.png)
+**Patroni**
+![Patroni Results](images/PatroniGraph.png)
 
-The above graph shows the major events broken up into two categories vertically: things that have to happen in the old primary, and things that have to happen in the new primary.
+**Postgres**
+![Postgres Results](images/PostgresGraph.png)
 
-***Old Primary***
+Before diving into analysis, there are few important things to highlight about these graphs. First, each graph is split vertically into two sections. The top section (green) are the events in the logs of the _new_ primary. The bottom section (blue) are the events in the logs of the _old_ primary. Second, these two graphs have the same axes. This allows us to reason between them, and identify places where Patroni actions influence Postgres, and vice versa.
 
-- Failover received - The request is received to crash/shut down gracefully
-- Candidtate ping(s)
+***Old Primary Analysis***
+
+From the above graphs, we can see a complete picture of how the old primary fails over in the case of scheduled downtime.
+
+- First, the command is issued to patroni. (Patroni event 0)
+- Next, Patroni pings the next leader to make sure they are alive. (Patroni events 1 + 2)
+- If the next leader is indeed alive, the old leader demotes themself (shuts down Postgres) and once Postgres is down releases the primary lock in the DCS. (Patroni events 4 + 6, Postgres events 3 + 4)
+- At this point, this node is no longer the primary, so now would be the time to perform any maintence necessary on the node.
+- When the node is ready to rejoin (as a replica this time) it restarts Postgres in read-only mode and then notifies the other nodes. (Patroni event 12, Postgres events 8 + 9)
+
+***New Primary Analysis***
+
+- Before failover occurs, the replica starts Postgres in standby mode accepting read-only connections. During each Patroni heartbeat, it's status is "follower". (Patroni event 3, Postgres events 1 + 2)
+- Once the old primary releases the primary lock in the DCS, this replica and claim it, make sure other values in the DCS are updated accordingly, and begin the process of promoting itself to primary. (Patroni events 5 + 7 + 8 + 9)
+- Patroni then triggers a promote request in the underlying Postgres instance, which causes the creation of a new timeline and allows the node to begin accepting write connections.
+- Finally, the node begins emitting Patroni heartbeats with status "leader".
+
+***But wait, why is there downtime even after the new primary emits a heartbeat as leader?***
+
+You'll notice in the above graphs that even after the new primary's first heartbeat as leader, there is still roughly three seconds of downtime. This is because of the settings on our proxy. Let's look at the relevant section from the HAProxy configuration file.
+
+```
+listen patroni-experiments
+    log global
+    bind <HOST_4>:5000
+    option httpchk
+    http-check expect status 200
+    default-server inter 3s fall 3 rise 2 on-marked-down shutdown-sessions
+    server <NAME_1> <HOST_1>:5433 maxconn 100 check port 8009
+    server <NAME_2> <HOST_2>:5433 maxconn 100 check port 8009
+    server <NAME_3> <HOST_3>:5433 maxconn 100 check port 8009
+```
+
+The spefic setting we care about is `default-server inter 3s fall 3 rise 2 on-marked-down shutdown-sessions`. This tells our proxy how to administer health-checks.
+- `inter = 3s` - Stands for interval and is the delay between consecutive health checks.
+- `fall = 3` - How many health checks must a machine fail to be considered dead.
+- `rise = 2` - How many health checks must a machine pass to be considered alive + healthy.
+
+Hence, the new primary may pass it's first healthcheck around the time it first has a leader heartbeat (Patroni event 10), the proxy will not consider directing traffic to it until it passes it's second health check, three seconds later.
 
 ## Future Work
 
@@ -108,15 +147,15 @@ The beauty of this set up, and NDB provisioned HA database clusters in general, 
 Going forward, there's still much we can do to better understand the latency experienced by our users, including...
 
 - Experimenting with patroni, postgres, and haproxy configuration settings to see how they affect failover downtime and database throughput.
-- Benchmark this system to find its limits when it comes to data ingestion, number of nodes, network partitioning, etc.
+- Benchmark this system to find its limits when it comes to data ingestion, number of nodes, network latency/partitioning, etc.
 - Implement some of the more advanced optimizations mentioned earlier including balancing read requests across replicas and tiering the network structure.
 
 # Takeaways
 
 Thanks for reading! I hope that you've learned something new by reading this article, including (but not limited to)
 
-- How to setup a HA database cluster using Postgres and Patroni
-- What a failover is, and how modern systems ensure near 100% uptime
+- How to setup a HA database cluster using Postgres and Patroni through Nutanix Database as a Service.
+- What a failover is, and how modern systems ensure near 100% uptime.
 - The main events that eat up time during a failover in a simple system.
 
 
