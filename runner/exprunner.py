@@ -1,4 +1,5 @@
 import sys
+import os
 
 sys.path.append("..")
 
@@ -29,6 +30,20 @@ class Runner:
         # Results
         self.POL_events = []
         self.PNL_events = []
+        self.graceful, self.ttl, self.exp_name = self.solicit_experiment()
+        self.out_dir = os.path.join("runs", self.exp_name)
+        if os.path.exists(self.out_dir):
+            os.system(f"rm -rf {self.out_dir}")
+    
+    def solicit_experiment(self) -> tuple[bool, int, str]:
+        """
+        Gets input from the user about the experiment.
+        :return: (graceful Y/N, ttl, name)
+        """
+        graceful = input("Failover gracefully? (y/n): ").lower() == "y"
+        ttl = int(input("DCS time to live (ttl): "))
+        exp_name = input("Experiment name: ")
+        return (graceful, ttl, exp_name)
     
     def issue_command(self, host: str, comm: str):
         """
@@ -107,13 +122,16 @@ class Runner:
         """
         print("Connecting to DB")
         # The interactive experiment tools
-        self.dg = DataGenerator(freq=0.2, rate=0.5)
+        self.dg = DataGenerator(freq=0.3, rate=0.5)
         self.dg.reset()
         print("Writing to DB...")
         self.dg.start_writing()
         time.sleep(10)
         print("Issuing failover...")
-        self.fm.issue_failover()
+        self.fm.issue_failover(
+            graceful=self.graceful,
+            issue_command=lambda c: self.issue_command(self.host1, c)
+        )
         self.fm.block_until_back()
         print("Status up...")
         self.dg.write_for_x_seconds_then_stop(10)

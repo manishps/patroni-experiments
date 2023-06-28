@@ -48,20 +48,23 @@ class FailoverManager:
         
         return (leader, replicas)
 
-    def issue_failover(self):
+    def issue_failover(self, graceful, issue_command):
         """
         Simply gets the node hierarchy and then issues a failover to the leader, randomly
         selecting a replica to promote
         """
         leader, replicas = self.get_nodes()
-        promote = sorted(replicas)[0]
-        resp = requests.post(f"http://{leader.host}:8009/failover", json={
-            "candidate": promote.name
-        })
-        if resp.status_code != 200:
-            print(resp.text)
-            raise Exception("Failover failed")
-    
+        if graceful:
+            promote = sorted(replicas)[0]
+            resp = requests.post(f"http://{leader.host}:8009/failover", json={
+                "candidate": promote.name
+            })
+            if resp.status_code != 200:
+                print(resp.text)
+                raise Exception("Failover failed")
+        else:
+            issue_command("pkill patroni && pkill python")
+
     def block_until_back(self):
         """
         A function that will block until it's able to successfully query cluster
