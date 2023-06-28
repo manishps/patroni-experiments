@@ -38,18 +38,18 @@ def scrape_PNL_events(fin: TextIOWrapper) -> List[PNLEvent]:
             last_follow_ix = ix
     fin.seek(0)
     # Then we can just speedrun sequential
-    eix = 0
     for ix, line in enumerate(fin.readlines()):
         if ix < last_follow_ix:
             continue
-        if eix >= len(PNLOrder):
-            break
-        marker = PNLOrder[eix].marker
-        if marker in line:
-            event = copy.deepcopy(PNLOrder[eix])
+        match = None
+        for event in PNLOrder:
+            if event.marker in line:
+                match = event
+                break
+        if match != None:
+            event = copy.deepcopy(match)
             event.timestamp = line[:23]
             result.append(event)
-            eix += 1
     return result
 
 def scrape_GOL_events(fin: TextIOWrapper) -> List[GOLEvent]:
