@@ -2,7 +2,7 @@ proxy:
 	cd haproxy && ./start-haproxy.sh
 
 api:
-	source venv/bin/activate && cd runner && python3 node_server.py&
+	./kill.sh && source venv/bin/activate && cd runner && python3 node_server.py&
 
 reset-data:
 	rm -rf etcd/data && rm -rf patroni/data
@@ -18,3 +18,6 @@ experiment:
 
 viewer:
 	cd runner && python3 viewer.py
+
+kill:
+	./kill.sh
