@@ -9,7 +9,7 @@ class Viewer:
     we can view the data
     """
     def __init__(self):
-        self.runner = Runner()
+        self.runner = Runner(viewer=True)
     
     def view(self):
         try:

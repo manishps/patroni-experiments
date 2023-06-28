@@ -14,7 +14,7 @@ class Runner:
     A class responsible for coordinating the data generator and the
     failover manager to generate results for patroni experiments
     """
-    def __init__(self):
+    def __init__(self, viewer=False):
         # Load the addresses of the machines
         with open ("../.config/.HOST_1", "r") as fin:
             self.host1 = fin.readline()
@@ -30,10 +30,12 @@ class Runner:
         # Results
         self.POL_events = []
         self.PNL_events = []
-        self.graceful, self.ttl, self.exp_name = self.solicit_experiment()
-        self.out_dir = os.path.join("runs", self.exp_name)
-        if os.path.exists(self.out_dir):
-            os.system(f"rm -rf {self.out_dir}")
+        if not viewer:
+            self.graceful, self.ttl, self.exp_name = self.solicit_experiment()
+            self.out_dir = os.path.join("runs", self.exp_name)
+            if os.path.exists(self.out_dir):
+                os.system(f"rm -rf {self.out_dir}")
+            os.system(f"mkdir {self.out_dir}")
     
     def solicit_experiment(self) -> tuple[bool, int, str]:
         """
@@ -86,7 +88,7 @@ class Runner:
         # Start patroni only on node 1 and wait for it to claim leader
         self.issue_command(self.host1, "make node-patroni&")
         time.sleep(3)
-        self.fm.block_until_back()
+        self.fm.block_until_back(self.host1)
 
         # Now we can start patroni on other nodes, and know that they will be replicas
         for host in [self.host2, self.host3]:
@@ -132,7 +134,7 @@ class Runner:
             graceful=self.graceful,
             issue_command=lambda c: self.issue_command(self.host1, c)
         )
-        self.fm.block_until_back()
+        self.fm.block_until_back(self.host2)
         print("Status up...")
         self.dg.write_for_x_seconds_then_stop(10)
         print("Recovered + written")
@@ -154,25 +156,25 @@ class Runner:
         # Patroni Old Leader (POL)
         resp = requests.get(f"http://{self.host1}:3000/get_logs/POL")
         self.POL_events = resp.json()["data"]
-        with open("POL_data.json", "w") as fout:
+        with open(os.path.join(self.out_dir, "POL_data.json"), "w") as fout:
             fout.write(resp.text)
 
         # Patroni New Leader (PNL)
         resp = requests.get(f"http://{self.host2}:3000/get_logs/PNL")
         self.POL_events = resp.json()["data"]
-        with open("PNL_data.json", "w") as fout:
+        with open(os.path.join(self.out_dir, "PNL_data.json"), "w") as fout:
             fout.write(resp.text)
         
         # Postgres Old Leader (GOL)
         resp = requests.get(f"http://{self.host1}:3000/get_logs/GOL")
         self.GOL_events = resp.json()["data"]
-        with open("GOL_data.json", "w") as fout:
+        with open(os.path.join(self.out_dir, "GOL_data.json"), "w") as fout:
             fout.write(resp.text)
         
         # Postgres New Leader (GNL)
         resp = requests.get(f"http://{self.host2}:3000/get_logs/GNL")
         self.GOL_events = resp.json()["data"]
-        with open("GNL_data.json", "w") as fout:
+        with open(os.path.join(self.out_dir, "GNL_data.json"), "w") as fout:
             fout.write(resp.text)
 
     def run(self):

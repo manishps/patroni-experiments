@@ -23,11 +23,11 @@ class FailoverManager:
         with open ("../.config/.HOST_4", "r") as fin:
             self.host4 = fin.readline()
 
-    def get_nodes(self) -> "tuple[Node, list[Node]]":
+    def get_nodes(self, host) -> "tuple[Node, list[Node]]":
         """
         Returns the host of the current leader
         """
-        resp = requests.get(f"http://{self.host1}:8009/cluster")
+        resp = requests.get(f"http://{host}:8009/cluster")
         leader = None
         replicas = []
         for member in resp.json()["members"]:
@@ -53,7 +53,7 @@ class FailoverManager:
         Simply gets the node hierarchy and then issues a failover to the leader, randomly
         selecting a replica to promote
         """
-        leader, replicas = self.get_nodes()
+        leader, replicas = self.get_nodes(self.host1)
         if graceful:
             promote = sorted(replicas)[0]
             resp = requests.post(f"http://{leader.host}:8009/failover", json={
@@ -63,9 +63,12 @@ class FailoverManager:
                 print(resp.text)
                 raise Exception("Failover failed")
         else:
-            issue_command("pkill patroni && pkill python")
+            issue_command("pkill patroni && pkill etcd")
+            time.sleep(1)
+            issue_command("make node-etcd&")
+            issue_command("make node-patroni&")
 
-    def block_until_back(self):
+    def block_until_back(self, host):
         """
         A function that will block until it's able to successfully query cluster
         information that includes a leader
@@ -74,18 +77,10 @@ class FailoverManager:
         DELAY = 0.1
         for _ in range(MAX_TRIES):
             try:
-                leader, _ = self.get_nodes()
+                leader, _ = self.get_nodes(host)
                 if leader != None:
                     break
             finally:
                 pass
             time.sleep(DELAY)
-
-
-
-if __name__ == "__main__":
-    fm = FailoverManager()
-    fm.issue_failover()
-    fm.block_until_back()
-
     

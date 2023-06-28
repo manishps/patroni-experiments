@@ -16,16 +16,11 @@ import json
 
 def scrape_POL_events(fin: TextIOWrapper) -> List[POLEvent]:
     result = []
-    eix = 0
     for line in fin.readlines():
-        if eix >= len(POLOrder):
-            break
-        marker = POLOrder[eix].marker
-        if marker in line:
-            event = copy.deepcopy(POLOrder[eix])
+        if any((match := event).marker in line for event in POLOrder):
+            event = copy.deepcopy(match)
             event.timestamp = line[:23]
             result.append(event)
-            eix += 1
     return result
 
 def scrape_PNL_events(fin: TextIOWrapper) -> List[PNLEvent]:
