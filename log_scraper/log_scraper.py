@@ -17,7 +17,12 @@ import json
 def scrape_POL_events(fin: TextIOWrapper) -> List[POLEvent]:
     result = []
     for line in fin.readlines():
-        if any((match := event).marker in line for event in POLOrder):
+        match = None
+        for event in POLOrder:
+            if event.marker in line:
+                match = event
+                break
+        if match != None:
             event = copy.deepcopy(match)
             event.timestamp = line[:23]
             result.append(event)
