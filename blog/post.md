@@ -49,7 +49,7 @@ Before going any further, let's take a moment to understand how the nodes in our
 
 We have a total of four nodes deployed in the Nutanix Cloud.
 
-*** Database Nodes***
+***Database Nodes***
 
 There are three databse nodes. One primary and two replicas. Each node is running three programs:
 
