@@ -21,3 +21,6 @@ viewer:
 
 kill:
 	./kill.sh
+
+refresh:
+	source venv/bin/activate && python3 refresh.py

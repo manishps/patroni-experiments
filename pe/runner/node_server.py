@@ -1,11 +1,7 @@
-import sys
-
-sys.path.append("..")
-
 import os
 from flask import Flask, make_response, jsonify
-from log_scraper.log_scraper import scrape_POL_events, scrape_PNL_events, scrape_GOL_events, scrape_GNL_events
-from log_scraper.events import Event2Dict
+from pe.log_scraper.log_scraper import scrape_POL_events, scrape_PNL_events, scrape_GOL_events, scrape_GNL_events
+from pe.log_scraper.events import Event2Dict
 from datetime import datetime
 
 app = Flask(__name__)

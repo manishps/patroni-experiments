@@ -2,12 +2,8 @@ import sys
 
 sys.path.append("..")
 
-try:
-    from events import Event, POLEvent, POLOrder, PNLEvent, PNLOrder, \
-        GOLEvent, GOLOrder, GNLEvent, GNLOrder, Event2Dict
-except:
-    from log_scraper.events import Event, POLEvent, POLOrder, PNLEvent, PNLOrder, \
-        GOLEvent, GOLOrder, GNLEvent, GNLOrder, Event2Dict 
+from pe.log_scraper.events import Event, POLEvent, POLOrder, PNLEvent, PNLOrder, \
+    GOLEvent, GOLOrder, GNLEvent, GNLOrder, Event2Dict 
 from io import TextIOWrapper
 from typing import List
 from datetime import datetime

@@ -1,13 +1,8 @@
-import sys
 import os
-
-sys.path.append("..")
-
 import time
-from failover_manager.failover_manager import FailoverManager
-from data_generator.data_generator import DataGenerator
+from pe.data_generator.data_generator import DataGenerator
+from pe.failover_manager.failover_manager import FailoverManager
 import requests
-import pdb
 
 class Runner:
     """
