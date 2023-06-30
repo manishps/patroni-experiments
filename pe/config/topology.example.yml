@@ -1,9 +1,7 @@
-my_name: pe1
-
 nodes:
   -
     name: pe1
-    host: 127.0.0.1
+    host: localhost
     api_port: 3000
     patroni_port: 8009
     etcd_port: 2379

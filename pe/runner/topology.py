@@ -1,3 +1,6 @@
+import os
+import jsonpickle
+from tqdm import tqdm
 from pe.config.parse import TopologyConfig
 from pe.runner.agent import Agent, Node, Proxy
 
@@ -26,11 +29,23 @@ class Topology:
         result.append(self.proxy)
         return result
     
-    def boot(self):
-        for agent in self.agents:
-            agent.boot()
+    def boot(self, verbose=True):
+        """
+        Start up the topology
+        """
+        if verbose:
+            print("Cleaning up...")
+        # Kill any patroni servers
+        os.system('pkill -9 -f "bin/patroni"')
+
+        if verbose:
+            print("Booting topology...")
+        for agent in tqdm(self.agents, disable=not verbose):
+            agent.boot(topology=self.config)
 
 
 if __name__ == "__main__":
     top = Topology("config/topology.local.yml", True)
+    encoded = jsonpickle.encode(top.config)
+    thawed = jsonpickle.decode(encoded)
     top.boot()

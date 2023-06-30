@@ -10,11 +10,24 @@ class AgentConfig:
     """
     An abstraction for agent in our system. It can be a VM, or entirely local
     with the right port combinations. Can either be a node (running patroni, etcd, etc...)
-    or the proxy.
+    or the proxy
     """
     name: str
     host: str
     api_port: int
+
+    @property
+    def replacements(self) -> list[tuple[str, str]]:
+        """
+        Helper function for generating a list of keywords to look for while
+        templating configuration files
+        """
+        return [
+            ("name", self.name),
+            ("host", self.host),
+            ("api_port", str(self.api_port)),
+        ]
+
 
 @dataclass
 class NodeConfig(AgentConfig):
@@ -25,12 +38,34 @@ class NodeConfig(AgentConfig):
     etcd_port: int
     pg_port: int
 
+    @property
+    def replacements(self) -> list[tuple[str, str]]:
+        """
+        Helper function for generating a list of keywords to look for while
+        templating configuration files
+        """
+        return [
+            ("patroni_port", str(self.patroni_port)),
+            ("etcd_port", str(self.etcd_port)),
+            ("pg_port", str(self.pg_port)),
+        ] + super().replacements
+
 @dataclass
 class ProxyConfig(AgentConfig):
     """
     The agent running the proxy. Has a special type and port to differentiate
     """
     proxy_port: int
+    
+    @property
+    def replacements(self) -> list[tuple[str, str]]:
+        """
+        Helper function for generating a list of keywords to look for while
+        templating configuration files
+        """
+        return [
+            ("proxy_port", str(self.proxy_port)),
+        ] + super().replacements 
 
 @dataclass
 class TopologyConfig:
@@ -41,7 +76,6 @@ class TopologyConfig:
     def __init__(self, file_path):
         with open(os.path.join(ROOT_DIR, file_path), "r") as fin:
             config = yaml.safe_load(fin)
-        self.my_name = config["my_name"]
         self.nodes = [NodeConfig(
             name=node["name"],
             host=node["host"],
@@ -56,26 +90,14 @@ class TopologyConfig:
             api_port=config["proxy"]["api_port"],
             proxy_port=config["proxy"]["proxy_port"],
         )
-        self.me: AgentConfig
-        for node in self.nodes:
-            if node.name == self.my_name:
-                self.me = node
-                break
-        else:
-            if self.proxy.name == self.my_name:
-                self.me = self.proxy
-            else:
-                raise ConfigParseError("my_name doesn't correspond to a provided agent")
 
     def __str__(self):
         nodes_str = ""
         for node in self.nodes:
             nodes_str += f"\n  {node}"
         return \
-            f"I am: {self.me}\n" + \
             f"Nodes: {nodes_str}\n" + \
             f"Proxy: {self.proxy}\n"
 
 if __name__ == "__main__":
-    topology = TopologyConfig("topology.example.yaml")
-    print(topology)
+    topology = TopologyConfig("config/topology.example.yml")
