@@ -124,4 +124,4 @@ class Proxy(Agent):
         self.api.start_proxy(conf)
 
     def stop(self):
-        pass
+        self.api.stop_proxy()

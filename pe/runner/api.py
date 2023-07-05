@@ -2,25 +2,19 @@ import os
 import sys
 import requests
 import jsonpickle
-import multiprocessing
-from datetime import datetime
 from flask import Flask, make_response, jsonify, request
 from pe.config.parse import TopologyConfig
 from pe.exceptions import ApiError
-from pe.log_scraper.log_scraper import scrape_POL_events, scrape_PNL_events, scrape_GOL_events, scrape_GNL_events
-from pe.log_scraper.events import Event2Dict
-from pe.runner.etcd import etcd_process
-from pe.runner.patroni import patroni_process
-from pe.runner.proxy import proxy_process
+from pe.runner.controllers import EtcdController, PatroniController, ProxyController
 from typing import Union
 
 app = Flask(__name__)
 
 class Api:
     # TODO: Anything cleaner than static?
-    etcd_process: Union[multiprocessing.Process, None] = None
-    patroni_process: Union[multiprocessing.Process, None] = None
-    proxy_process: Union[multiprocessing.Process, None] = None
+    etcd_controller: EtcdController = EtcdController()
+    patroni_controller: PatroniController = PatroniController()
+    proxy_controller: ProxyController = ProxyController()
     """
     A class to manage the controller api on each agent. This class has
     BOTH the code to actually run the flask app AND interact with it
@@ -94,11 +88,10 @@ class Api:
         topology = jsonpickle.decode(raw_topology)
         if not isinstance(topology, TopologyConfig):
             return make_response("Improper json", 503)
-        Api.etcd_process = multiprocessing.Process(
-            target=etcd_process,
-            args=(json["my_name"], topology)
-        )
-        Api.etcd_process.start()
+        Api.etcd_controller.start({
+            "my_name": json["my_name"],
+            "topology": topology,
+        })
         return make_response("Etcd started", 200)
     def start_etcd(self, my_name: str, topology: TopologyConfig):
         body = {
@@ -106,6 +99,17 @@ class Api:
             "topology": jsonpickle.encode(topology)
         }
         self.post("start_etcd", json=body)
+    
+    """
+    Stop local etcd instances
+    """
+    @staticmethod
+    @app.route("/stop_etcd", methods=["POST"])
+    def api_stop_etcd():
+        Api.etcd_controller.stop()
+        return make_response("Etcd killed", 200)
+    def stop_etcd(self):
+        self.post("stop_etcd")
     
     """
     Start patroni locally in a different process
@@ -120,11 +124,7 @@ class Api:
         patroni_dict = jsonpickle.decode(raw_patroni_dict)
         if not isinstance(patroni_dict, dict):
             return make_response("Improper json", 503)
-        Api.patroni_process = multiprocessing.Process(
-            target=patroni_process,
-            args=(patroni_dict,)
-        )
-        Api.patroni_process.start()
+        Api.patroni_controller.start(patroni_dict)
         return make_response("Patroni started", 200)
     def start_patroni(self, patroni_dict: dict):
         body = {
@@ -133,31 +133,12 @@ class Api:
         self.post("start_patroni", json=body)
     
     """
-    Stop local etcd instances
-    """
-    @staticmethod
-    @app.route("/stop_etcd", methods=["POST"])
-    def api_stop_etcd():
-        print("here here here")
-        if Api.etcd_process:
-            Api.etcd_process.terminate()
-            Api.etcd_process.join()
-            Api.etcd_process = None
-            print("killed everything")
-        return make_response("Etcd killed", 200)
-    def stop_etcd(self):
-        self.post("stop_etcd")
-    
-    """
     Stop local patroni instances
     """
     @staticmethod
     @app.route("/stop_patroni", methods=["POST"])
     def api_stop_patroni():
-        if Api.patroni_process:
-            Api.patroni_process.terminate()
-            Api.patroni_process.join()
-            Api.patroni_process = None
+        Api.patroni_controller.stop()
         return make_response("Patroni killed", 200)
     def stop_patroni(self):
         self.post("stop_patroni")
@@ -172,19 +153,24 @@ class Api:
         if json == None or json.get("haproxy_conf", None) == None:
             return make_response("Improper json", 503)
         conf = json["haproxy_conf"]
-
-        Api.proxy_process = multiprocessing.Process(
-            target=proxy_process,
-            args=(conf,)
-        )
-        Api.proxy_process.start()
+        Api.proxy_controller.start(conf)
         return make_response("Proxy started", 200)
     def start_proxy(self, conf: str):
         body = {
             "haproxy_conf": conf,
         }
         self.post("start_proxy", json=body)
-        
+    
+    """
+    Stop a local proxy instance
+    """
+    @staticmethod
+    @app.route("/stop_proxy", methods=["POST"])
+    def api_stop_proxy():
+        Api.proxy_controller.stop()
+        return make_response("Proxy killed", 200)
+    def stop_proxy(self):
+        self.post("stop_proxy")
 
 
 if __name__ == "__main__":

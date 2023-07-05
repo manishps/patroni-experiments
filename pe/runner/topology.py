@@ -60,5 +60,5 @@ class Topology:
 if __name__ == "__main__":
     top = Topology("config/topology.local.yml", is_local=True)
     top.boot()
-    time.sleep(2)
+    time.sleep(6)
     top.stop()
