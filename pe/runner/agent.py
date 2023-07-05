@@ -2,10 +2,11 @@ import os
 import subprocess
 import time
 import yaml
+from configparser import ConfigParser
 from pe.config.parse import AgentConfig, NodeConfig, ProxyConfig, TopologyConfig
 from pe.exceptions import BootError
 from pe.runner.api import Api
-from pe.utils import kill_process_on_port, ROOT_DIR
+from pe.utils import kill_process_on_port, ROOT_DIR, replace_strs
 
 class Agent():
     """
@@ -39,6 +40,9 @@ class Agent():
                 time.sleep(DELAY)
         else:
             raise BootError(f"{self.config.name} api is not ready after {MAX_RETRIES * DELAY} seconds")
+    
+    def stop(self):
+        raise NotImplementedError("The method to stop nodes should be implemented specifically")
 
 class Node(Agent):
     """
@@ -68,43 +72,56 @@ class Node(Agent):
             if not os.path.exists(path + "/" + self.config.name):
                 os.mkdir(path + "/" + self.config.name)
 
-        def replace_strs(obj):
-            """
-            Helper function to recursively modify strings in a dictionary
-            """
-            replacements = self.config.replacements + [
-                ("pg_data_dir", f"{ROOT_DIR}/../data/postgres/{self.config.name}"),
-                ("patroni_log_dir", f"{ROOT_DIR}/../data/patroni/{self.config.name}")
-            ]
-            for key in obj:
-                val = obj[key]
-                if isinstance(val, str):
-                    for marker, replacement in replacements:
-                        val = obj[key]
-                        marker = f"<{marker}>"
-                        obj[key] = val.replace(marker, replacement)
-                if isinstance(val, dict):
-                    obj[key] = replace_strs(obj[key])
-                if isinstance(val, list):
-                    new_list = []
-                    for item in val:
-                        if not isinstance(item, str):
-                            continue
-                        new_str = item
-                        for marker, replacement in replacements:
-                            marker = f"<{marker}>"
-                            new_str = new_str.replace(marker, replacement)
-                        new_list.append(new_str)
-                    obj[key] = new_list
-            return obj
+        replacements = self.config.replacements + [
+            ("pg_data_dir", f"{ROOT_DIR}/../data/postgres/{self.config.name}"),
+            ("patroni_log_dir", f"{ROOT_DIR}/../data/patroni/{self.config.name}")
+        ]
         
-        return replace_strs(config)
+        return replace_strs(config, replacements)
     
     def boot(self, topology: TopologyConfig):
+        """
+        Start a node (etcd, patroni)
+        """
         super().boot(topology) # This ensures that the Flask server is up
         self.api.start_etcd(self.config.name, topology)
         patroni_dict = self.construct_patroni_config()
         self.api.start_patroni(patroni_dict)
+    
+    def stop(self):
+        """
+        Stop a node (patroni, etcd)
+        """
+        self.api.stop_patroni()
+        self.api.stop_etcd()
 
 class Proxy(Agent):
-    pass
+    """
+    The PROXY in use for the experiment
+    :param NodeConfig config: The configuration for this node
+    :param bool is_local: Is this node running locally?
+    """
+    def __init__(self, config: ProxyConfig, is_local: bool):
+        self.api = Api(config.host, config.api_port)
+        self.config = config
+        self.is_local = is_local 
+    
+    def boot(self, topology: TopologyConfig):
+        """
+        Start the proxy
+        """
+        super().boot(topology) # This ensures that the Flask server is up
+        with open(os.path.join(ROOT_DIR, "config", "haproxy.cfg"), "r") as fin:
+            raw_conf = fin.read()
+        
+        replacements = self.config.replacements + [
+            ("server_lines","\n    ".join([
+                f"server {node.name} {node.host}:{node.pg_port} maxconn 100 check port {node.patroni_port}" for node in topology.nodes
+            ]))
+        ]
+        conf = replace_strs({"data": raw_conf}, replacements)["data"]
+
+        self.api.start_proxy(conf)
+
+    def stop(self):
+        pass

@@ -14,7 +14,5 @@ def patroni_process(config: dict):
     config_file = os.path.join(ROOT_DIR, "runner", "tmp", "patroni_" + config["name"] + ".yml")
     with open(config_file, "w") as fout:
         fout.write(yaml.safe_dump(config))
-    print("before patroni sys")
     os.system(f"patroni {config_file} > /dev/null")
     os.system(f"rm {config_file}")
-    print("after patroni sys")
