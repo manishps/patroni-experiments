@@ -1,5 +1,6 @@
 import os
 import time
+import shutil
 from tqdm import tqdm
 from pe.runner.topology import Topology
 from pe.data_generator.data_generator import DataGenerator
@@ -15,11 +16,11 @@ class Experiment():
         self.topology = Topology(self.config_file, is_local=self.is_local)
     
     def clear_data(self):
-        os.system(f"rm -rf {ROOT_DIR}/../data")
-        os.system(f"mkdir {ROOT_DIR}/../data")
-        os.system(f"mkdir {ROOT_DIR}/../data/etcd")
-        os.system(f"mkdir {ROOT_DIR}/../data/patroni")
-        os.system(f"mkdir -m777 {ROOT_DIR}/../data/postgres")
+        shutil.rmtree(f"{ROOT_DIR}/data", ignore_errors=True)
+        os.mkdir(f"{ROOT_DIR}/data")
+        os.mkdir(f"{ROOT_DIR}/data/etcd")
+        os.mkdir(f"{ROOT_DIR}/data/patroni")
+        os.mkdir(f"{ROOT_DIR}/data/postgres")
     
     def run(self) -> tuple[str, str]:
         """
@@ -42,14 +43,23 @@ class Experiment():
         dg.start_writing()
         for _ in tqdm(range(5)):
             time.sleep(1)
+        
+        for node in self.topology.nodes:
+            node.api.ping()
 
         print("Issuing failover...")
         _, replicas = old_leader_node.get_roles()
         new_leader = replicas[0]
         old_leader_node.failover(new_leader)
 
+        for node in self.topology.nodes:
+            node.api.ping()
+
         print("Writing some more...")
         dg.write_for_x_seconds_then_stop(5)
+
+        for node in self.topology.nodes:
+            node.api.ping()
 
         print("Done writing")
         self.topology.stop()

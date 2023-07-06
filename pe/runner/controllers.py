@@ -58,7 +58,7 @@ class EtcdController(AbstractCMDController):
         lines = ["etcd"]
 
         # Output data pe/../data/<name>
-        lines.append(f"--data-dir {ROOT_DIR}/../data/etcd/{my_name}")
+        lines.append(f"--data-dir {ROOT_DIR}/data/etcd/{my_name}")
         # Name ourselves
         lines.append(f"--name {my_name}")
         # Advertise ourselves to peers

@@ -35,7 +35,7 @@ class Agent():
         DELAY = 0.5
         for _ in range(MAX_RETRIES):
             try:
-                self.api.ping()
+                self.api.ping() 
                 break
             except:
                 time.sleep(DELAY)
@@ -67,15 +67,13 @@ class Node(Agent):
             config = yaml.safe_load(fin)
         
         for dir in ["postgres", "patroni"]:
-            path = os.path.join(ROOT_DIR, "..", "data", dir)
-            if not os.path.exists(path):
-                os.mkdir(path)
+            path = os.path.join(ROOT_DIR, "data", dir)
             if not os.path.exists(path + "/" + self.config.name):
-                os.mkdir(path + "/" + self.config.name)
+                os.mkdir(path + "/" + self.config.name, mode=0o750)
 
         replacements = self.config.replacements + [
-            ("pg_data_dir", f"{ROOT_DIR}/../data/postgres/{self.config.name}"),
-            ("patroni_log_dir", f"{ROOT_DIR}/../data/patroni/{self.config.name}")
+            ("pg_data_dir", f"{ROOT_DIR}/data/postgres/{self.config.name}"),
+            ("patroni_log_dir", f"{ROOT_DIR}/data/patroni/{self.config.name}")
         ]
         
         return replace_strs(config, replacements)
