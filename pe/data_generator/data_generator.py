@@ -9,13 +9,15 @@ class DataGenerator():
     """
     A class that writes data to the database at regular
     intervals to test
+    :param proxy_host: Host of the proxy
+    :param proxy_port: Port of the proxy
     :param freq=0.1: How often to write data (s)
     :param rate=1.0: How many MiB to write per second
     :table_name="dummy": Name of the table to store data in
     """
-    def __init__(self, freq=0.1, rate=1.0, table_name="dummy"):
-        with open("../.config/.HOST_4", "r") as fin:
-            self.proxy_host = fin.readline()
+    def __init__(self, proxy_host: str, proxy_port: int, freq=0.1, rate=1.0, table_name="dummy"):
+        self.proxy_host = proxy_host
+        self.proxy_port = proxy_port
         self.conn = self.block_for_writable_connection(initial=True)
         self.table_name = table_name
         self.create_table()
@@ -34,9 +36,9 @@ class DataGenerator():
         :returns: a json.dumps object which can be written during DB
         calls to obtain the desired rate
         """
-        size = int(self.freq * self.rate)
+        size = self.freq * self.rate
         dictionary = {
-            "a": "b" * size * int(1e6)
+            "a": "b" * int(size * int(1e6))
         }
         json_object = json.dumps(dictionary, indent=4)
         with open("payload.json", "w") as outfile:
@@ -61,7 +63,7 @@ class DataGenerator():
                                 host=self.proxy_host,
                                 user="postgres",
                                 password="password",
-                                port="5000")
+                                port=self.proxy_port)
             except:
                 pass
             if conn == None:
