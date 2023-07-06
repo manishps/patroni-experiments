@@ -1,4 +1,3 @@
-import multiprocessing
 import subprocess
 from abc import ABC, abstractmethod
 from typing import Union
@@ -8,6 +7,7 @@ import shlex
 from pe.config.parse import NodeConfig, TopologyConfig
 from pe.exceptions import BootError
 from pe.utils import kill_process_on_port, ROOT_DIR
+from threading import Thread
 
 
 class AbstractCMDController(ABC):
@@ -94,6 +94,9 @@ class EtcdController(AbstractCMDController):
 
 
 class PatroniController(AbstractCMDController):
+    def __init__(self):
+        super().__init__()
+
     """
     A class for managing a patroni instance launched from the command line
     """

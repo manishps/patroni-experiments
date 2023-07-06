@@ -34,6 +34,10 @@ class Experiment():
         old_leader, _ = self.topology.nodes[0].get_roles()
         old_leader_node = [node for node in self.topology.nodes if node.config.name == old_leader][0]
 
+        for node in self.topology.nodes:
+            
+            node.api.ping()
+
         print("Writing to DB...")
         dg = DataGenerator(
             self.topology.config.proxy.host,
