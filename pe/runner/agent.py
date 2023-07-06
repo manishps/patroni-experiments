@@ -2,6 +2,7 @@ import os
 import subprocess
 import time
 import yaml
+import requests
 from configparser import ConfigParser
 from pe.config.parse import AgentConfig, NodeConfig, ProxyConfig, TopologyConfig
 from pe.exceptions import BootError
@@ -28,7 +29,7 @@ class Agent():
                 os.path.join(ROOT_DIR, "runner", "api.py"),
                 self.api.host,
                 str(self.api.port)
-            ] , stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            ])# , stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         # Ensure the flask server is up
         MAX_RETRIES = 10
         DELAY = 0.5
@@ -94,6 +95,43 @@ class Node(Agent):
         """
         self.api.stop_patroni()
         self.api.stop_etcd()
+    
+    def get_roles(self, block=True) -> tuple[str, list[str]]:
+        """
+        Uses this nodes patroni api to get the name of the current leader
+        and name of the followers
+        :param bool block: If the initial request fails, should we retry till success?
+        """
+        while True:
+            try:
+                resp = requests.get(f"http://{self.config.host}:{self.config.patroni_port}/cluster")
+                data = resp.json()
+                primary = ""
+                replicas = []
+                for member in data["members"]:
+                    if member["role"] == "leader":
+                        primary = member["name"]
+                    else:
+                        replicas.append(member["name"])
+                if len(primary) == 0:
+                    raise ValueError("No primary")
+                return (primary, replicas)
+            except Exception as e:
+                if not block:
+                    raise e
+                else:
+                    time.sleep(0.1)
+    
+    def failover(self, new_leader: str):
+        """
+        Triggers a failover. Note that if this node is not the leader
+        it will fail.
+        :param str new_leader: Who to fail over to
+        """
+        requests.post(f"http://{self.config.host}:{self.config.patroni_port}", json={
+            "candidate": new_leader
+        })
+        
 
 class Proxy(Agent):
     """

@@ -138,7 +138,7 @@ class Api:
     @staticmethod
     @app.route("/stop_patroni", methods=["POST"])
     def api_stop_patroni():
-        Api.patroni_controller.stop()
+        Api.patroni_controller.stop()    
         return make_response("Patroni killed", 200)
     def stop_patroni(self):
         self.post("stop_patroni")

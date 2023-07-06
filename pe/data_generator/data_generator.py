@@ -4,6 +4,8 @@ import time
 from datetime import datetime
 import json
 import psycopg2
+import os
+from pe.utils import ROOT_DIR
 
 class DataGenerator():
     """
@@ -41,7 +43,7 @@ class DataGenerator():
             "a": "b" * int(size * int(1e6))
         }
         json_object = json.dumps(dictionary, indent=4)
-        with open("payload.json", "w") as outfile:
+        with open(os.path.join(ROOT_DIR, "data_generator", "payload.json"), "w") as outfile:
             outfile.write(json_object)
         return json_object
     

@@ -13,6 +13,13 @@ nodes:
     patroni_port: 8010
     etcd_port: 2381
     pg_port: 5434
+  -
+    name: pe3
+    host: 127.0.0.1
+    api_port: 3002
+    patroni_port: 8011
+    etcd_port: 2383
+    pg_port: 5435
 
 proxy:
   name: pe4

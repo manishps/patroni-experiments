@@ -1,5 +1,6 @@
-import time
 import os
+import time
+from tqdm import tqdm
 from pe.runner.topology import Topology
 from pe.data_generator.data_generator import DataGenerator
 from pe.utils import ROOT_DIR
@@ -18,24 +19,45 @@ class Experiment():
         os.system(f"mkdir {ROOT_DIR}/../data")
         os.system(f"mkdir {ROOT_DIR}/../data/etcd")
         os.system(f"mkdir {ROOT_DIR}/../data/patroni")
-        os.system(f"mkdir {ROOT_DIR}/../data/postgres")
+        os.system(f"mkdir -m777 {ROOT_DIR}/../data/postgres")
     
-    def run(self):
+    def run(self) -> tuple[str, str]:
+        """
+        Runs the experiment and returns the name of the old and new leader
+        :return tuple[str, str]: representing (old_leader_name, new_leader_name)
+        """
         self.clear_data()
         self.topology.boot(verbose=True)
+
+        print("Waiting for leadership...")
+        old_leader, _ = self.topology.nodes[0].get_roles()
+        old_leader_node = [node for node in self.topology.nodes if node.config.name == old_leader][0]
+
         print("Writing to DB...")
-        self.dg = DataGenerator(
+        dg = DataGenerator(
             self.topology.config.proxy.host,
             self.topology.config.proxy.proxy_port
         )
-        self.dg.reset()
-        self.dg.write_for_x_seconds_then_stop(10)
-        time.sleep(10)
+        dg.reset()
+        dg.start_writing()
+        for _ in tqdm(range(5)):
+            time.sleep(1)
+
+        print("Issuing failover...")
+        _, replicas = old_leader_node.get_roles()
+        new_leader = replicas[0]
+        old_leader_node.failover(new_leader)
+
+        print("Writing some more...")
+        dg.write_for_x_seconds_then_stop(5)
+
         print("Done writing")
         self.topology.stop()
+
+        return (old_leader, new_leader)
         
     
 
 if __name__ == "__main__":
     experiment = Experiment("config/topology.local.yml", is_local=True)
-    experiment.run()
+    print(experiment.run())
