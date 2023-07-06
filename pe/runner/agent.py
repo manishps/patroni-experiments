@@ -126,7 +126,7 @@ class Node(Agent):
         it will fail.
         :param str new_leader: Who to fail over to
         """
-        requests.post(f"http://{self.config.host}:{self.config.patroni_port}", json={
+        resp = requests.post(f"http://{self.config.host}:{self.config.patroni_port}/failover", json={
             "candidate": new_leader
         })
         
