@@ -15,8 +15,13 @@ class Experiment():
     
     def clear_data(self):
         os.system(f"rm -rf {ROOT_DIR}/../data")
+        os.system(f"mkdir {ROOT_DIR}/../data")
+        os.system(f"mkdir {ROOT_DIR}/../data/etcd")
+        os.system(f"mkdir {ROOT_DIR}/../data/patroni")
+        os.system(f"mkdir {ROOT_DIR}/../data/postgres")
     
     def run(self):
+        self.clear_data()
         self.topology.boot(verbose=True)
         print("Writing to DB...")
         self.dg = DataGenerator(
@@ -24,7 +29,7 @@ class Experiment():
             self.topology.config.proxy.proxy_port
         )
         self.dg.reset()
-        # self.dg.write_for_x_seconds_then_stop(10)
+        self.dg.write_for_x_seconds_then_stop(10)
         time.sleep(10)
         print("Done writing")
         self.topology.stop()

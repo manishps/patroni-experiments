@@ -28,7 +28,7 @@ class Agent():
                 os.path.join(ROOT_DIR, "runner", "api.py"),
                 self.api.host,
                 str(self.api.port)
-            ]) #, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            ] , stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         # Ensure the flask server is up
         MAX_RETRIES = 10
         DELAY = 0.5
