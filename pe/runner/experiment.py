@@ -6,8 +6,11 @@ from pe.runner.agent import Node
 from pe.runner.topology import Topology
 from pe.data_generator.data_generator import DataGenerator
 from pe.log_scraper.log_scraper import PatroniScraper, PostgresScraper
+from pe.plotter.plot_client_perspective import plot_client_perspective
+from pe.plotter.plot_events import plot_events
 from pe.utils import ROOT_DIR
 from threading import Thread
+from typing import Union
 
 class Experiment():
     """
@@ -17,6 +20,7 @@ class Experiment():
         self.config_file = config_file
         self.is_local = is_local
         self.topology = Topology(self.config_file, is_local=self.is_local)
+        self.dg: Union[DataGenerator, None] = None
     
     def clear_data(self):
         shutil.rmtree(f"{ROOT_DIR}/data", ignore_errors=True)
@@ -45,6 +49,16 @@ class Experiment():
         new_postgres_scraper.recreate_locally(new_leader_node.api)
         new_patroni_events = new_patroni_scraper.scrape()
 
+        client_times = self.dg.get_successful_writes()
+        outage = plot_client_perspective(client_times)
+        plot_events(
+            old_events=old_patroni_events,
+            new_events=new_patroni_events,
+            title="Patroni Events",
+            outage=outage,
+            new_loc=(client_times[4], 4),
+            old_loc=(client_times[4], -4)
+        )
 
     def run(self) -> tuple[str, str]:
         """
@@ -63,13 +77,14 @@ class Experiment():
         old_leader, _ = self.topology.nodes[0].get_roles()
         old_leader_node = [node for node in self.topology.nodes if node.config.name == old_leader][0]
 
-        print("Writing to DB...")
-        dg = DataGenerator(
+        self.dg = DataGenerator(
             self.topology.config.proxy.host,
             self.topology.config.proxy.proxy_port
         )
-        dg.reset()
-        dg.start_writing()
+
+        print("Writing to DB...")
+        self.dg.reset()
+        self.dg.start_writing()
         show_bar()
 
         print("Issuing failover...")
@@ -83,14 +98,14 @@ class Experiment():
         print("Writing some more...")
         bar_thread = Thread(target=show_bar)
         bar_thread.start()
-        dg.write_for_x_seconds_then_stop(10)
+        self.dg.write_for_x_seconds_then_stop(10)
         bar_thread.join()
+
+        self.analyze(old_leader_node, new_leader_node)
 
         print("Done writing")
         input("Enter anything to stop")
         self.topology.stop()
-
-        return (old_leader, new_leader)
 
 
 if __name__ == "__main__":
