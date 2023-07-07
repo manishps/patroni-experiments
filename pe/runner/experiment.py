@@ -2,8 +2,10 @@ import os
 import time
 import shutil
 from tqdm import tqdm
+from pe.runner.agent import Node
 from pe.runner.topology import Topology
 from pe.data_generator.data_generator import DataGenerator
+from pe.log_scraper.log_scraper import PatroniScraper, PostgresScraper
 from pe.utils import ROOT_DIR
 from threading import Thread
 
@@ -22,7 +24,28 @@ class Experiment():
         os.mkdir(f"{ROOT_DIR}/data/etcd")
         os.mkdir(f"{ROOT_DIR}/data/patroni")
         os.mkdir(f"{ROOT_DIR}/data/postgres")
-    
+
+    def analyze(self, old_leader_node: Node, new_leader_node: Node):
+        get_patroni_log_path = lambda name: f"{ROOT_DIR}/data/patroni/{name}/patroni.log"
+        get_postgres_log_path = lambda name: f"{ROOT_DIR}/data/postgres/{name}/logs"
+
+        old_patroni_scraper = PatroniScraper(get_patroni_log_path(old_leader_node.config.name), old=True)
+        old_patroni_scraper.recreate_locally(old_leader_node.api)
+        old_patroni_events = old_patroni_scraper.scrape()
+
+        old_postgres_scraper = PostgresScraper(get_patroni_log_path(old_leader_node.config.name), old=True)
+        old_postgres_scraper.recreate_locally(old_leader_node.api)
+        old_postgres_events = old_postgres_scraper.scrape()
+
+        new_patroni_scraper = PatroniScraper(get_patroni_log_path(new_leader_node.config.name), old=False)
+        new_patroni_scraper.recreate_locally(new_leader_node.api)
+        new_patroni_events = new_patroni_scraper.scrape()
+
+        new_postgres_scraper = PostgresScraper(get_patroni_log_path(new_leader_node.config.name), old=False)
+        new_patroni_scraper.recreate_locally(new_leader_node.api)
+        new_patroni_events = new_patroni_scraper.scrape()
+
+
     def run(self) -> tuple[str, str]:
         """
         Runs the experiment and returns the name of the old and new leader

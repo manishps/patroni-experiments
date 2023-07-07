@@ -153,9 +153,25 @@ class DataGenerator():
             self.writing_thread = None
     
     def write_for_x_seconds_then_stop(self, x: float):
+        """
+        Called after the failover happens, waits until it gets confirmation
+        on at least x seconds of writes and then stops the process
+        """
         self.is_starting = None
         self.end_seconds = x
         if self.writing_thread:
             self.writing_thread.join()
             self.writing_thread = None
 
+    def get_successful_writes(self) -> list[datetime]:
+        """
+        After the writing job(s) are over, checks which timestamps
+        actually made it to the DB
+        """
+        self.conn = self.block_for_writable_connection()
+        with self.conn.cursor() as cur:
+            cur.execute(f"""
+                SELECT "time" from {self.table_name};
+            """)
+            res = cur.fetchall()
+            return [row[0] for row in res]

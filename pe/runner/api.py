@@ -206,7 +206,7 @@ class Api:
                 result += fin.read()
         return result
     def fetch_folder(self, folder: str):
-        self.post("fetch_folder", json={"path": folder})
+        return self.post("fetch_folder", json={"path": folder})
 
 
 if __name__ == "__main__":

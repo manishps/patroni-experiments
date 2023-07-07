@@ -96,10 +96,17 @@ class PostgresScraper(LogScraper):
     :param bool old: Do these logs correspond to the logs of the old leader?
     """
     def __init__(self, path: str, old:bool):
-        super().__init__(path)
+        if not os.path.exists(path):
+            os.mkdir(path)
+        self.path = path
+        self.local_path = os.path.join(path, "pg-local.log")
         self.old = old
+    
+    def recreate_locally(self, api: Api):
+        with open(os.path.join(ROOT_DIR, self.local_path), "w") as fout:
+            fout.write(api.fetch_folder(self.path))
 
-    def get_transactions(self):
+    def get_translations(self):
         if self.old:
             return [
                 ("database system is ready to accept connections", "DB ready for writes"),
@@ -144,5 +151,10 @@ if __name__ == "__main__":
     api = Api("127.0.0.1", 3000)
     ls1.recreate_locally(api)
     ls2.recreate_locally(api)
+    ls3.recreate_locally(api)
+    ls4.recreate_locally(api)
+
     print(ls1.scrape())
     print(ls2.scrape())
+    print(ls3.scrape())
+    print(ls4.scrape())
