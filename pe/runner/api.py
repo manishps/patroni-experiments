@@ -6,6 +6,7 @@ from flask import Flask, make_response, jsonify, request
 from pe.config.parse import TopologyConfig
 from pe.exceptions import ApiError
 from pe.runner.controllers import EtcdController, PatroniController, ProxyController
+from pe.utils import ROOT_DIR
 from typing import Union
 
 app = Flask(__name__)
@@ -46,6 +47,7 @@ class Api:
         resp = requests.post(posting, json=json)
         if resp.status_code != 200:
             raise ApiError(f"POST {posting} return {resp.text}")
+        return resp.text
     
     def serve(self):
         """
@@ -171,6 +173,40 @@ class Api:
         return make_response("Proxy killed", 200)
     def stop_proxy(self):
         self.post("stop_proxy")
+
+    """
+    Fetch the contents of a file
+    """
+    @staticmethod
+    @app.route("/fetch_file", methods=["POST"])
+    def api_fetch_file():
+        json = request.json
+        path = json.get("path") if json else None
+        if path == None:
+            return make_response("Improper json", 503)
+        with open(os.path.join(ROOT_DIR, path)) as fin:
+            return make_response(fin.read(), 200)
+    def fetch_file(self, path: str):
+        return self.post("fetch_file", json={"path": path})
+    
+    """
+    Fetch all logs in a folder (appending them together)
+    """
+    @staticmethod
+    @app.route("/fetch_folder", methods=["POST"])
+    def api_fetch_folder():
+        json = request.json
+        path = json.get("path") if json else None
+        if path == None:
+            return make_response("Path does not exist")
+        files = sorted(os.listdir(path))
+        result = ""
+        for file in files:
+            with open(os.path.join(path, file)) as fin:
+                result += fin.read()
+        return result
+    def fetch_folder(self, folder: str):
+        self.post("fetch_folder", json={"path": folder})
 
 
 if __name__ == "__main__":

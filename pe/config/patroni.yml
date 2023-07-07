@@ -49,6 +49,8 @@ postgresql:
       password: rewind_password
   parameters:
     unix_socket_directories: '..'
+    logging_collector: on
+    log_directory: logs
   basebackup:
     - verbose
     - max-rate: 100M

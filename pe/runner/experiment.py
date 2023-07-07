@@ -63,15 +63,12 @@ class Experiment():
         dg.write_for_x_seconds_then_stop(10)
         bar_thread.join()
 
-        for node in self.topology.nodes:
-            node.api.ping()
-
         print("Done writing")
+        input("Enter anything to stop")
         self.topology.stop()
 
         return (old_leader, new_leader)
-        
-    
+
 
 if __name__ == "__main__":
     experiment = Experiment("config/topology.local.yml", is_local=True)

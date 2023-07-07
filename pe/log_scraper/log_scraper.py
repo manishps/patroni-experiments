@@ -1,101 +1,148 @@
-import sys
-
-sys.path.append("..")
-
-from pe.log_scraper.events import Event, POLEvent, POLOrder, PNLEvent, PNLOrder, \
-    GOLEvent, GOLOrder, GNLEvent, GNLOrder, Event2Dict 
-from io import TextIOWrapper
-from typing import List
+import abc
+import os
+from pe.runner.api import Api
+from pe.utils import ROOT_DIR
+from typing import NamedTuple
 from datetime import datetime
-import copy
-import json
 
-def scrape_POL_events(fin: TextIOWrapper) -> List[POLEvent]:
-    result = []
-    for line in fin.readlines():
-        match = None
-        for event in POLOrder:
-            if event.marker in line:
-                match = event
-                break
-        if match != None:
-            event = copy.deepcopy(match)
-            event.timestamp = line[:23]
-            result.append(event)
-    return result
+class Event(NamedTuple):
+    timestamp: datetime
+    raw: str
+    readable: str
 
-def scrape_PNL_events(fin: TextIOWrapper) -> List[PNLEvent]:
-    result = []
-    last_follow_ix = -1
-    # First get the ix of the last follow
-    follow = PNLOrder[0]
-    for ix, line in enumerate(fin.readlines()):
-        if follow.marker in line:
-            last_follow_ix = ix
-    fin.seek(0)
-    # Then we can just speedrun sequential
-    for ix, line in enumerate(fin.readlines()):
-        if ix < last_follow_ix:
-            continue
-        match = None
-        for event in PNLOrder:
-            if event.marker in line:
-                match = event
-                break
-        if match != None:
-            event = copy.deepcopy(match)
-            event.timestamp = line[:23]
-            result.append(event)
-    return result
-
-def scrape_GOL_events(fin: TextIOWrapper) -> List[GOLEvent]:
-    result = []
-    eix = 0
-    for line in fin.readlines():
-        if eix >= len(GOLOrder):
-            break
-        marker = GOLOrder[eix].marker
-        if marker in line:
-            event = copy.deepcopy(GOLOrder[eix])
-            event.timestamp = line[:23]
-            result.append(event)
-            eix += 1
-    return result
-
-def scrape_GNL_events(fin: TextIOWrapper) -> List[GNLEvent]:
-    result = []
-    eix = 0
-    for line in fin.readlines():
-        if eix >= len(GNLOrder):
-            break
-        marker = GNLOrder[eix].marker
-        if marker in line:
-            event = copy.deepcopy(GNLOrder[eix])
-            event.timestamp = line[:23]
-            result.append(event)
-            eix += 1
-    return result
+class LogScraper(abc.ABC):
+    """
+    A base class that represents a log scraper.
+    :param str path: A path (from the root of this module) to the log to scrape
+    """
+    def __init__(self, path: str):
+        self.path = path
+        split = path.split(".")
+        self.local_path = split[0] + "-local" + "." + split[1]
     
+    def recreate_locally(self, api: Api):
+        """
+        A method that will fetch the log from the remote source (api) and recreate it
+        at the same path locally for analysis.
+        :param Api api: An api object bound to the machine containing the log in question
+        """
+        with open(os.path.join(ROOT_DIR, self.local_path), "w") as fout:
+            fout.write(api.fetch_file(self.path))
+
+    @abc.abstractclassmethod
+    def get_translations(self) -> list[tuple[str, str]]:
+        """
+        Returns the list of markers and their translations
+        """
+        raise NotImplementedError("Can't get abstract translations")
+
+    @abc.abstractclassmethod
+    def scrape(self) -> list[Event]:
+        """
+        Does the work of scraping and returns the events in a human (and plot) friendly format
+        """
+        raise NotImplementedError("Can't scrape abstract translations")
+
+class PatroniScraper(LogScraper):
+    """"
+    A class for scraping Patroni logs
+    :param bool old: Do these logs correspond to the logs of the old leader?
+    """
+    def __init__(self, path: str, old: bool):
+        super().__init__(path)
+        self.old = old
+
+    def get_translations(self):
+        if self.old:
+            return [
+                ("received failover request", "Failover request received"),
+                ("Got response from", "Pinging next leader"),
+                ("Demoting self", "Demoting self"),
+                ("key released", "Releasing DCS key"),
+                ("closed patroni connection to the postgresql cluster", "Closing PG connection"),
+                ("accepting connections", "Accepting new PG connections"),
+                ("establishing a new patroni connection to the postgres cluster", "Establishing new PG connections"),
+            ]
+        else:
+            return [
+                ("a secondary, and following a leader", "Last heartbeat as follower"),
+                ("to key /service/patroni-experiments/leader", "Claiming leader in DCS"),
+                ("Cleaning up failover key after acquiring leader lock", "Cleaning up DCS"),
+                ("promoted self to leader by acquiring session lock", "Promoting self"),
+                ("cleared rewind state after becoming the leader", "Clearing rewind state"),
+                ("the leader with the lock", "First heartbeat as leader"),
+            ]
+    
+    def scrape(self):
+        result = []
+        with open(self.local_path) as fin:
+            lines = fin.readlines()
+        for line in lines:
+            for (marker, readable) in self.get_translations():
+                if marker in line:
+                    raw_stamp = line[:23]
+                    timestamp = datetime.strptime(raw_stamp, '%Y-%m-%d %H:%M:%S,%f')
+                    result.append(Event(
+                        timestamp=timestamp,
+                        raw=line,
+                        readable=readable
+                    ))
+        return result
+
+
+class PostgresScraper(LogScraper):
+    """"
+    A class for scraping Patroni logs
+    :param bool old: Do these logs correspond to the logs of the old leader?
+    """
+    def __init__(self, path: str, old:bool):
+        super().__init__(path)
+        self.old = old
+
+    def get_transactions(self):
+        if self.old:
+            return [
+                ("database system is ready to accept connections", "DB ready for writes"),
+                ("received fast shutdown request", "DB received shutdown"),
+                ("database system is shut down", "DB finished shutdown"),
+                ("starting PostgreSQL", "DB restarting"),
+                ("database system is ready to accept read-only connections", "DB ready for reads"),
+            ]
+        else:
+            return [
+                ("entering standby mode", "DB entering standby mode"),
+                ("database system is ready to accept read-only connections", "DB ready for reads"),
+                ("replication terminated by primary server", "DB replication terminated"),
+                ("received promote request", "DB received promote request"),
+                ("selected new timeline ID", "Starging new DB timeline"),
+                ("database system is ready to accept connections", "DB ready for writes"),
+            ]
+
+    def scrape(self):
+        result = []
+        with open(self.local_path) as fin:
+            lines = fin.readlines()
+        for line in lines:
+            for (marker, readable) in self.get_translations():
+                if marker in line:
+                    raw_stamp = line[:23]
+                    timestamp = datetime.strptime(raw_stamp, '%Y-%m-%d %H:%M:%S.%f')
+                    result.append(Event(
+                        timestamp=timestamp,
+                        raw=line,
+                        readable=readable
+                    ))
+        return result
+
 
 if __name__ == "__main__":
-    with open("../patroni/logs/POL.log", "r") as fin:
-        with open("../runner/POL_data.json", "w") as fout:
-            raw_events = scrape_POL_events(fin)
-            clean_events = {"data": [Event2Dict(e) for e in raw_events]}
-            fout.write(json.dumps(clean_events))
-    with open("../patroni/logs/PNL.log", "r") as fin:
-        with open("../runner/PNL_data.json", "w") as fout:
-            raw_events = scrape_PNL_events(fin)
-            clean_events = {"data": [Event2Dict(e) for e in raw_events]}
-            fout.write(json.dumps(clean_events))
-    with open("../patroni/data/GOL/log/GOL.log", "r") as fin:
-        with open("../runner/GOL_data.json", "w") as fout:
-            raw_events = scrape_GOL_events(fin)
-            clean_events = {"data": [Event2Dict(e) for e in raw_events]}
-            fout.write(json.dumps(clean_events))
-    with open("../patroni/data/GNL/log/GNL.log", "r") as fin:
-        with open("../runner/GNL_data.json", "w") as fout:
-            raw_events = scrape_GNL_events(fin)
-            clean_events = {"data": [Event2Dict(e) for e in raw_events]}
-            fout.write(json.dumps(clean_events))
-     
+    ls1 = PatroniScraper("data/patroni/pe1/patroni.log", old=True)
+    ls2 = PatroniScraper("data/patroni/pe2/patroni.log", old=False)
+    ls3 = PostgresScraper("data/postgres/pe1/logs", old=True)
+    ls4 = PostgresScraper("data/postgres/pe2/logs", old=False)
+
+    api = Api("127.0.0.1", 3000)
+    ls1.recreate_locally(api)
+    ls2.recreate_locally(api)
+    print(ls1.scrape())
+    print(ls2.scrape())
