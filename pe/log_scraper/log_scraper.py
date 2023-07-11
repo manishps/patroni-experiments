@@ -26,7 +26,7 @@ class LogScraper(abc.ABC):
         at the same path locally for analysis.
         :param Api api: An api object bound to the machine containing the log in question
         """
-        with open(os.path.join(ROOT_DIR, self.local_path), "w") as fout:
+        with open(os.path.join(self.local_path), "w") as fout:
             fout.write(api.fetch_file(self.path))
 
     @abc.abstractclassmethod
@@ -103,7 +103,7 @@ class PostgresScraper(LogScraper):
         self.old = old
     
     def recreate_locally(self, api: Api):
-        with open(os.path.join(ROOT_DIR, self.local_path), "w") as fout:
+        with open(os.path.join(self.local_path), "w") as fout:
             fout.write(api.fetch_folder(self.path))
 
     def get_translations(self):
