@@ -84,8 +84,8 @@ class Node(Agent):
                 os.mkdir(path + "/" + self.config.name, mode=0o750)
 
         replacements = self.config.replacements + [
-            ("pg_data_dir", f"{ROOT_DIR}/data/postgres/{self.config.name}"),
-            ("patroni_log_dir", f"{ROOT_DIR}/data/patroni/{self.config.name}")
+            ("pg_data_dir", f"data/postgres/{self.config.name}"),
+            ("patroni_log_dir", f"data/patroni/{self.config.name}")
         ]
         
         return replace_strs(config, replacements)
