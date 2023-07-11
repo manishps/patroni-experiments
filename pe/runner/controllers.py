@@ -53,7 +53,8 @@ class EtcdController(AbstractCMDController):
         
         # Kill any programs on needed ports
         for port in [me.etcd_port, me.etcd_port + 1]:
-            kill_process_on_port(port)
+            pass
+            # kill_process_on_port(port)
 
         lines = ["etcd"]
 
