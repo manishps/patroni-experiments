@@ -157,7 +157,7 @@ export PATH=$PATH:/usr/pgsql-15/bin/
 
 ### 1.3.3 Python 3.9
 
-The version of CentOS that we're using comes with Python 3.6 by default, which is lacking many of the features we need. You can upgrade to 3.9 by following [this tutorial](https://www.inmotionhosting.com/support/server/linux/install-python-3-9-centos-7/). You can make sure you've got it installed by running
+The version of CentOS that we're using comes with Python 3.6 by default, which is lacking many of the features we need. You can upgrade to 3.9 by following [this tutorial](https://phoenixnap.com/kb/how-to-install-python-3-centos-7). You can make sure you've got it installed by running
 ```sh
 python3.9 --version
 ```

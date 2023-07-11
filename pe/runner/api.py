@@ -1,3 +1,4 @@
+import click
 import os
 import sys
 import requests
@@ -209,8 +210,9 @@ class Api:
         return self.post("fetch_folder", json={"path": folder})
 
 
-if __name__ == "__main__":
-    host, port = sys.argv[1:3]
-    port = int(port)
+@click.command()
+@click.argument("host", type=click.STRING)
+@click.argument("port", type=click.INT)
+def start_api(host: str, port: int):
     api = Api(host, port)
     api.serve()
