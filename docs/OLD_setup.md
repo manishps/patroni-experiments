@@ -1,15 +1,5 @@
 # Setup
 
-This document outlines how to use this repository and the Nutanix Cloud to begin experimenting with HA Postgres yourself.
-
-
-
-
-
---------------
-
-# OLD STUFF
-
 This document outlines how setup this repo across three VMs in Prism to play around with yourself.
 
 ### [1. VM Creation](#vm-creation)

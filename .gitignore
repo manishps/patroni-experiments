@@ -1,14 +1,14 @@
 ###### OUR STUFF ######
 
+!pe/config/topology.example.yml
+!pe/config/topology.local.yml
+pe/config/topology*
 data/
 pe/data_generator/payload.json
 pe/results
 pe/runner/tmp
-# Json logs from nodes
-pe/runner/ClientPerspective.json
 .vscode
-.DS_Store
-
+**/.DS_Store
 
 ####### AUTO-FILLED PYTHON STUFF BELOW ######
 # Byte-compiled / optimized / DLL files

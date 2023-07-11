@@ -2,7 +2,8 @@
 
 Modern users expect their apps and data to be accessible, _always_. Not just most of the time. Not just when there isn't maintence. __100% of the time__. That's what _highly available (HA)_ systems provide.
 
-Okay, fine, true 100% uptime simply isn't possible. After all, the probability of a meteor destroying the planet tomorrow (and all your servers) is greater than 0%. But with thoughtful system design, we can get surprisingly close to that magic 100% guarantee.
+Okay, fine, true 100% uptime simply isn't possibl
+e. After all, the probability of a meteor destroying the planet tomorrow (and all your servers) is greater than 0%. But with thoughtful system design, we can get surprisingly close to that magic 100% guarantee.
 
 In today's article, we'll explore how HA Databases are implemented in practice, with a special focus on understanding the mechanisms that allow HA databases to survive a handful of crashed nodes. By the end of this article, you'll understand what a _failover_ is and get a peek under the hood of how failovers are managed in Patroni.
 
