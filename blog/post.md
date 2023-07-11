@@ -1,15 +1,14 @@
-
 # Introduction
 
 Modern users expect their apps and data to be accessible, _always_. Not just most of the time. Not just when there isn't maintence. __100% of the time__. That's what _highly available (HA)_ systems provide.
 
 Okay, fine, true 100% uptime simply isn't possible. After all, the probability of a meteor destroying the planet tomorrow (and all your servers) is greater than 0%. But with thoughtful system design, we can get surprisingly close to that magic 100% guarantee.
 
-In today's article, we'll explore how HA Databases are implemented in practice, with a special focus on understanding the mechanisms that allow HA databases to survive a handful of crashed nodes. By the end of this article, you'll understand what a _failover_ is, as well as see an example of latency breakdown in a real-world highly-available database using Postgres and Patroni. 
+In today's article, we'll explore how HA Databases are implemented in practice, with a special focus on understanding the mechanisms that allow HA databases to survive a handful of crashed nodes. By the end of this article, you'll understand what a _failover_ is and get a peek under the hood of how failovers are managed in Patroni.
 
 ## State of the Art
 
-Most modern systems implement high availability using a [_primary replica_](https://www.cs.cornell.edu/fbs/publications/DSbook.c8.pdf) model, where one node (the _primary_) processes all queries, and is responsible for sending these queries to the replicas. The replicas acknowledge receipt of the queries from the primary, and follow along with their own local copy of the database.
+Most modern systems implement shared-nothing high availability using a [_primary replica_](https://www.cs.cornell.edu/fbs/publications/DSbook.c8.pdf) model, where one node (the _primary_) is responsible for all write connections. The _replicas_ receive updates from the primary. Some replicas are syncronous, meaning that the primary must make sure that they have commited all changes before telling the client that the write has persisted. Other replicas are asyncronous, and the primary may continue serving client write requests before receiving confirmation.
 
 In the event that the primary goes down, some kind of [_consensus algorithm_](https://en.wikipedia.org/wiki/Consensus_(computer_science)) is used amongst the remaining replicas to decide who will become the next primary. A [_proxy_](https://en.wikipedia.org/wiki/Proxy_server) (or even proxies) is used to ensure that the from the client's perspective, it appears as though there is only a single, consistent node. (Although there may be a moment or two of downtime as a new primary is taking over.) Because each replica follows along with a local copy of the database, if/when they become primary, there is minimal lag before they are ready to accept new queries.    
 
