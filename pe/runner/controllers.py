@@ -23,6 +23,7 @@ class AbstractCMDController(ABC):
 
     def start(self, _):
         if self.process != None:
+            self.process.terminate()
             raise BootError("Tried to start an already started controller")
 
     def stop(self):
