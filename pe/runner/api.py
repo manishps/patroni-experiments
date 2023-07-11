@@ -185,7 +185,7 @@ class Api:
         path = json.get("path") if json else None
         if path == None:
             return make_response("Improper json", 503)
-        with open(os.path.join(ROOT_DIR, path)) as fin:
+        with open(os.path.join(path)) as fin:
             return make_response(fin.read(), 200)
     def fetch_file(self, path: str):
         return self.post("fetch_file", json={"path": path})
