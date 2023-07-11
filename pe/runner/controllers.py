@@ -85,7 +85,7 @@ class EtcdController(AbstractCMDController):
         # Enable v2 for local if needed
         lines.append(f"--enable-v2=true")
         # Silence
-        lines.append(f"--log-outputs /dev/null")
+        # lines.append(f"--log-outputs /dev/null")
 
         COMMAND = " ".join(lines)
         print(COMMAND)
