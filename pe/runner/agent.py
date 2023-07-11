@@ -19,17 +19,27 @@ class Agent():
         self.api = Api(config.host, config.api_port)
         self.config = config
         self.is_local = is_local
+        # CHANGES IF IT PRINTS
+        self.verbose = False
 
     def boot(self, topology: TopologyConfig):
         if self.is_local:
             # If this agent is local, restart the Flask server locally
             kill_process_on_port(self.api.port)
-            subprocess.Popen([
-                "python3",
-                os.path.join(ROOT_DIR, "runner", "api.py"),
-                self.api.host,
-                str(self.api.port)
-            ])#, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            if self.verbose:
+                subprocess.Popen([
+                    "python3",
+                    os.path.join(ROOT_DIR, "runner", "api.py"),
+                    self.api.host,
+                    str(self.api.port)
+                ])
+            else:
+                subprocess.Popen([
+                    "python3",
+                    os.path.join(ROOT_DIR, "runner", "api.py"),
+                    self.api.host,
+                    str(self.api.port)
+                ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         # Ensure the flask server is up
         MAX_RETRIES = 10
         DELAY = 0.5
@@ -55,6 +65,8 @@ class Node(Agent):
         self.api = Api(config.host, config.api_port)
         self.config = config
         self.is_local = is_local
+        # CHANGES IF IT PRINTS
+        self.verbose = False
     
     def construct_patroni_config(self):
         """
@@ -140,7 +152,9 @@ class Proxy(Agent):
     def __init__(self, config: ProxyConfig, is_local: bool):
         self.api = Api(config.host, config.api_port)
         self.config = config
-        self.is_local = is_local 
+        self.is_local = is_local
+        # CHANGES IF IT PRINTS
+        self.verbose = False
     
     def boot(self, topology: TopologyConfig):
         """

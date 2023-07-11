@@ -1,12 +1,30 @@
+# These are the database nodes that will participate in the experiment
+# Each node will run flask, patroni, etcd, and postgres.
+# You should make sure that each node has access to the necessary ports.
+# IF THIS IS A LOCAL CONFIGURATION you're all set.
+# IF THIS IS A REMOTE CONFIGURATION you'll need to manually go in to each
+# node and make sure the firewall allows the needed ports, and then
+# manually start the flask server by running `pe/runner/api.py <host> <port>`.
 nodes:
   -
+    # Name used internally and for etcd/patroni. Must be unique.
     name: pe1
+    # Host/ip
     host: localhost
+    # Port used for the flask server
     api_port: 3000
+    # Port used for patroni
     patroni_port: 8009
+    # Port used for etcd
+    # NOTE: etcd uses TWO ports, the value `x` provided below, AND `x + 1`.
+    # NOTE: Therefore you need to make sure that this node has access to the
+    # NOTE: below port AND the below port + 1.
     etcd_port: 2379
+    # Port used for postgres
     pg_port: 5433
+
   -
+    # Same as above
     name: pe2
     host: 127.0.0.1
     api_port: 3001
@@ -14,6 +32,11 @@ nodes:
     etcd_port: 2381
     pg_port: 5434
 
+  # You can specify as many nodes as you want to by extending this list
+
+# This is the setup for the proxy. It only runs flask and HAProxy.
+# Like above, make sure it can use the needed ports, and if it's a remote
+# configuration manually start the flask api on this machine.
 proxy:
   name: pe4
   host: 127.0.0.1

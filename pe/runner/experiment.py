@@ -1,6 +1,8 @@
 import os
+import click
 import time
 import shutil
+import sys
 from tqdm import tqdm
 from pe.runner.agent import Node
 from pe.runner.topology import Topology
@@ -47,7 +49,7 @@ class Experiment():
 
         new_postgres_scraper = PostgresScraper(get_postgres_log_path(new_leader_node.config.name), old=False)
         new_postgres_scraper.recreate_locally(new_leader_node.api)
-        new_patroni_events = new_patroni_scraper.scrape()
+        new_postgres_events = new_patroni_scraper.scrape()
 
         client_times = self.dg.get_successful_writes()
         outage = plot_client_perspective(client_times)
@@ -107,7 +109,9 @@ class Experiment():
         input("Enter anything to stop")
         self.topology.stop()
 
-
-if __name__ == "__main__":
-    experiment = Experiment("config/topology.local.yml", is_local=True)
-    print(experiment.run())
+@click.command()
+@click.argument('config-file')
+@click.option('--is-local/--is-remote', default=False)
+def experiment(config_file, is_local):
+    exp = Experiment(config_file=config_file, is_local=is_local)
+    exp.run()

@@ -2,28 +2,102 @@
 
 This document outlines how to use this repository and the Nutanix Cloud to begin experimenting with HA Postgres yourself.
 
+# 1. Configuration
 
+Configuration files are kept in the `pe/config` directory. To play around with the specific tools, you should edit:
 
+- `pe/config/haproxy.cfg` - HA Proxy configuration
+- `pe/config/patroni.yml` - Patroni configuration
 
+To change the `etcd` settings, you'll need to edit `EtcdController` in `pe/runner/controllers.py` directly, as `etcd` is started via command-line dynamically.
 
---------------
+## 1.1 Playing With the Topology
 
-# OLD STUFF
+Part of the beauty of this testing framework is that it's agnostic as to whether you're running it locally or on the Nutanix Cloud. Simply copy `pe/config/topology.example.yml` into a new file and edit it to match whatever setup you want to play around with. It's recommended that you start testing a given configuration locally, to ensure everything works as expected, and then move on to distributing the nodes across an actual cluster.
 
-This document outlines how setup this repo across three VMs in Prism to play around with yourself.
+Topology configuration files have a couple important parts, explained in comments below (`pe/config/topology.example.yml`):
 
-### [1. VM Creation](#vm-creation)
-[1.1 Ignored Files](#ignored-files)
+```yml
+# These are the database nodes that will participate in the experiment
+# Each node will run flask, patroni, etcd, and postgres.
+# You should make sure that each node has access to the necessary ports.
+# IF THIS IS A LOCAL CONFIGURATION you're all set.
+# IF THIS IS A REMOTE CONFIGURATION you'll need to manually go in to each
+# node and make sure the firewall allows the needed ports, and then
+# manually start the flask server by running `pe/runner/api.py <host> <port>`.
+nodes:
+  -
+    # Name used internally and for etcd/patroni. Must be unique.
+    name: pe1
+    # Host/ip
+    host: localhost
+    # Port used for the flask server
+    api_port: 3000
+    # Port used for patroni
+    patroni_port: 8009
+    # Port used for etcd
+    # NOTE: etcd uses TWO ports, the value `x` provided below, AND `x + 1`.
+    # NOTE: Therefore you need to make sure that this node has access to the
+    # NOTE: below port AND the below port + 1.
+    etcd_port: 2379
+    # Port used for postgres
+    pg_port: 5433
 
-### [2. Installing Tools](#installing-tools)
-[2.1 Postgres](#postgres)
-[2.2 Python + Other](#other-dependencies)
+  -
+    # Same as above
+    name: pe2
+    host: 127.0.0.1
+    api_port: 3001
+    patroni_port: 8010
+    etcd_port: 2381
+    pg_port: 5434
 
-### [3. Opening Ports](#opening-ports)
+  # You can specify as many nodes as you want to by extending this list
 
-## VM Creation
+# This is the setup for the proxy. It only runs flask and HAProxy.
+# Like above, make sure it can use the needed ports, and if it's a remote
+# configuration manually start the flask api on this machine.
+proxy:
+  name: pe4
+  host: 127.0.0.1
+  api_port: 3002
+  proxy_port: 5000
+```
 
-You'll need to make three VMs. Fields to specify while making each VM:
+## 1.2 Running A Simple Local Configuration
+
+First, ensure you have installed...
+
+- `Python` version 3.9 or higher ([instructions here](https://www.python.org/downloads/release/python-390/))
+- `Postgres` version 15 ([instructions here](https://www.postgresql.org/docs/current/tutorial-install.html))
+- `HAProxy` version 1.1 or higher ([instructions here](https://www.haproxy.com/documentation/hapee/latest/getting-started/installation/))
+
+Then create a virtual environment by running
+
+```sh
+python3 -m venv venv
+source venv/bin/activate
+```
+
+from the project root. Then we can install all the other tools we need by running
+
+```sh
+pip3 install -r requirements.txt
+pip3 install --editable .
+```
+The second command installs the project directory as an editable dependency, which allows us to use module access patterns and more easily configure project scripts. If all goes well, we can run the default local experiment using
+
+```sh
+experiment config/topology.local.yml --is-local
+```
+
+## 1.3 Preparing Nodes on the Nutanix Cloud
+
+### 1.3.1 VM Creation
+
+In order to run the experiment in a real distributed setup, you'll need to manually configure as many VMs as you want to play with. This subsection describes what you'll need to do inside each individual node.
+
+Using [Prism](https://www.nutanix.com/go/nutanix-cloud-tco-roi?nis=8), create a VM specifying the following:
 
 - `name` - \<PREFIX\>\_patroni_exp_\<i\>
 - `vCPU(s)` - 1
@@ -62,45 +136,16 @@ and add
 to the end of the file. You will then need to reboot.
 ```
 
-Once installation and setup complete, you can access however you'd like. (I personally use remote connection through VS Code.)
+Once installation and setup complete, you can access however you'd like. (I personally use remote connection through VS Code.) You'll want to go into each node and clone this repo into a sane location.
 
-### Ignored Files
+### 1.3.2 Postgres
 
-At this point, you'll likely want to set up `git` on the machine and clone this repo. This is left to the reader.
+For CentOS 7.6, run:
 
-One important thing to note, however, is that certain configuration files are hidden from git source but expected to be present.
-
-- First, create a copy of `.THIS_NAME.example` and rename the file `.THIS_NAME` in the root directory. Each VM should have a unique name in this file, just a simple string should do.
-- Then, create a copy of the entire `.config.example` folder. **NOTE:** For _each_ VM, you should list both the host (IP) and unique name you gave it in `.THIS_NAME`. This is how machines will create configuration files that boot patroni, so it's important this is done correctly.
-
-
-## Installing Tools
-
-The next step is to install the necessary tools on each VM.
-
-### Postgres
-
-Add the requirements repo
-
-```
+```sh
 sudo yum install https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
-```
-
-Install requirements
-
-```
 sudo yum install libzstd-devel
-```
-
-Add another repo
-
-```
 sudo yum install -y https://download.postgresql.org/pub/repos/yum/reporpms/EL-7-x86_64/pgdg-redhat-repo-latest.noarch.rpm
-```
-
-Actually install last things
-
-```
 sudo yum -y install postgresql15-server python-devel postgresql-devel
 ```
 
@@ -110,29 +155,33 @@ Fix PATH. Open `~/.bashrc` and add
 export PATH=$PATH:/usr/pgsql-15/bin/
 ```
 
-### Other Dependencies
+### 1.3.3 Python 3.9
 
+The version of CentOS that we're using comes with Python 3.6 by default, which is lacking many of the features we need. You can upgrade to 3.9 by following [this tutorial](https://www.inmotionhosting.com/support/server/linux/install-python-3-9-centos-7/). You can make sure you've got it installed by running
+```sh
+python3.9 --version
 ```
+You should see `Python 3.9.6` printed.
+
+### 1.3.4 Other Dependencies + Environment
+
+```sh
 sudo yum install etcd haproxy libyaml python python3-psycopg2 gcc python3-devel
 ```
 
 Next make a virtual environment for python by running
 
-```
-python3 -m venv venv
+```sh
+python3.9 -m venv venv
 source venv/bin/activate
+pip3.9 install -r requirements.txt
+pip3.9 install --editable . # From inside the root of this project
 ```
 
-Then get the python dependencies using
-
-```
-pip3 install -r requirements.txt
-```
-
-## Opening Ports
+### 1.3.5 Firewall Management
 
 `etcd` and `patroni` use a few ports which are not open for connections by default. To fix this, run
-```
+```sh
 sudo vi /etc/services
 ```
 and add
@@ -147,7 +196,7 @@ patroni         8009/tcp                # Patroni REST Api
 
 Then we need to allow them on the firewall
 
-```
+```sh
 sudo firewall-cmd --zone=public --add-port 2379/tcp --permanent
 sudo firewall-cmd --zone=public --add-port 2380/tcp --permanent
 sudo firewall-cmd --zone=public --add-port 5432/tcp --permanent
@@ -157,3 +206,5 @@ sudo firewall-cmd --zone=public --add-port 5000/tcp --permanent
 sudo firewall-cmd --zone=public --add-port 3000/tcp --permanent
 sudo firewall-cmd --reload
 ```
+
+Depending on your setup, you may need to add additional ports to `/etc/services` and run `firewall-cmd` addtional times. That's up to you.

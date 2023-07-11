@@ -41,6 +41,7 @@ class Topology:
             # Kill any etcd/patroni servers
             os.system('pkill -9 etcd')
             os.system('pkill -9 -f "bin/patroni"')
+            os.system('pkill -9 haproxy')
 
         if verbose:
             print("Booting topology...")
