@@ -53,7 +53,7 @@ class EtcdController(AbstractCMDController):
         
         # Kill any programs on needed ports
         for port in [me.etcd_port, me.etcd_port + 1]:
-            pass
+            pass # 
             # kill_process_on_port(port)
 
         lines = ["etcd"]
@@ -107,7 +107,7 @@ class PatroniController(AbstractCMDController):
         # Kill any programs on needed ports
         for conn_str in [config["postgresql"]["connect_address"], config["restapi"]["connect_address"]]:
             port = int(conn_str.split(":")[1])
-            kill_process_on_port(port)
+            # kill_process_on_port(port)
 
         config_file = os.path.join(ROOT_DIR, "runner", "tmp", "patroni_" + config["name"] + ".yml")
         with open(config_file, "w") as fout:
