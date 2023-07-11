@@ -88,6 +88,7 @@ class EtcdController(AbstractCMDController):
         lines.append(f"--log-outputs /dev/null")
 
         COMMAND = " ".join(lines)
+        print(COMMAND)
         self.process = subprocess.Popen(shlex.split(COMMAND))
     
     def stop(self):
