@@ -32,8 +32,8 @@ class Experiment():
         os.mkdir(f"{ROOT_DIR}/data/postgres")
 
     def analyze(self, old_leader_node: Node, new_leader_node: Node):
-        get_patroni_log_path = lambda name: f"data/patroni/{name}/patroni.log"
-        get_postgres_log_path = lambda name: f"data/postgres/{name}/logs"
+        get_patroni_log_path = lambda name: f"pe/data/patroni/{name}/patroni.log"
+        get_postgres_log_path = lambda name: f"pe/data/postgres/{name}/logs"
 
         old_patroni_scraper = PatroniScraper(get_patroni_log_path(old_leader_node.config.name), old=True)
         old_patroni_scraper.recreate_locally(old_leader_node.api)
