@@ -17,13 +17,14 @@ class AbstractCMDController(ABC):
     the command line, but would like to have better control over (better
     than tossing around kill -9s all the time)
     """
+
     def __init__(self):
         self.process: Union[subprocess.Popen, None] = None
         self.tmp_files: list[str] = []
 
     def start(self, _):
         if self.process != None:
-            self.process.terminate()
+            self.process.kill()
             raise BootError("Tried to start an already started controller")
 
     def stop(self):
@@ -38,7 +39,8 @@ class EtcdController(AbstractCMDController):
     """
     A class for managing an etcd instance launched from the command line
     """
-    def start(self, config: dict):
+
+    def start(self, config: dict, verbose=False):
         super().start(config)
 
         my_name: str = config["my_name"]
@@ -51,10 +53,10 @@ class EtcdController(AbstractCMDController):
                 break
         if me == None:
             raise BootError("Etcd misconfigured for" + my_name)
-        
+
         # Kill any programs on needed ports
         for port in [me.etcd_port, me.etcd_port + 1]:
-            pass # 
+            pass  #
             # kill_process_on_port(port)
 
         lines = ["etcd"]
@@ -64,13 +66,17 @@ class EtcdController(AbstractCMDController):
         # Name ourselves
         lines.append(f"--name {my_name}")
         # Advertise ourselves to peers
-        lines.append(f"--initial-advertise-peer-urls http://{me.host}:{me.etcd_port + 1}")
+        lines.append(
+            f"--initial-advertise-peer-urls http://{me.host}:{me.etcd_port + 1}"
+        )
         # Listen for peers on the same port
         lines.append(f"--listen-peer-urls http://{me.host}:{me.etcd_port + 1}")
         # Advertise for clients on a different port
         lines.append(f"--advertise-client-urls http://{me.host}:{me.etcd_port}")
         # Listen for clients on that^ port
-        lines.append(f"--listen-client-urls http://{me.host}:{me.etcd_port},http://127.0.0.1:{me.etcd_port}")
+        lines.append(
+            f"--listen-client-urls http://{me.host}:{me.etcd_port},http://127.0.0.1:{me.etcd_port}"
+        )
 
         # Construct the cluster
         CLUSTER = ""
@@ -89,9 +95,12 @@ class EtcdController(AbstractCMDController):
         # lines.append(f"--log-outputs /dev/null")
 
         COMMAND = " ".join(lines)
-        print(COMMAND)
-        self.process = subprocess.Popen(shlex.split(COMMAND))
-    
+        self.process = subprocess.Popen(
+            shlex.split(COMMAND),
+            stdout=subprocess.DEVNULL if not verbose else None,
+            stderr=subprocess.DEVNULL if not verbose else None,
+        )
+
     def stop(self):
         super().stop()
 
@@ -103,20 +112,30 @@ class PatroniController(AbstractCMDController):
     """
     A class for managing a patroni instance launched from the command line
     """
-    def start(self, config: dict):
+
+    def start(self, config: dict, verbose=False):
         super().start(config)
 
         # Kill any programs on needed ports
-        for conn_str in [config["postgresql"]["connect_address"], config["restapi"]["connect_address"]]:
+        for conn_str in [
+            config["postgresql"]["connect_address"],
+            config["restapi"]["connect_address"],
+        ]:
             port = int(conn_str.split(":")[1])
             # kill_process_on_port(port)
 
-        config_file = os.path.join(ROOT_DIR, "runner", "tmp", "patroni_" + config["name"] + ".yml")
+        config_file = os.path.join(
+            ROOT_DIR, "runner", "tmp", "patroni_" + config["name"] + ".yml"
+        )
         with open(config_file, "w") as fout:
             fout.write(yaml.safe_dump(config))
         self.tmp_files.append(config_file)
-        self.process = subprocess.Popen(shlex.split(f"patroni {config_file}"))
-    
+        self.process = subprocess.Popen(
+            shlex.split(f"patroni {config_file}"),
+            stdout=subprocess.DEVNULL if not verbose else None,
+            stderr=subprocess.DEVNULL if not verbose else None,
+        )
+
     def stop(self):
         super().stop()
 
@@ -125,14 +144,20 @@ class ProxyController(AbstractCMDController):
     """
     A class for managing the proxy instance launched from the command line
     """
-    def start(self, config: str):
+
+    def start(self, config: str, verbose=False):
         super().start(config)
 
         config_file = os.path.join(ROOT_DIR, "runner", "tmp", "proxy" + ".cfg")
         with open(config_file, "w") as fout:
             fout.write(config)
         self.tmp_files.append(config_file)
-        self.process = subprocess.Popen(shlex.split(f"haproxy -f {config_file}"))
+        with open("pe/data/haproxy/proxy.log", "w") as fout:
+            self.process = subprocess.Popen(
+                shlex.split(f"haproxy -f {config_file}"),
+                stdout=fout,
+                stderr=fout,
+            )
 
     def stop(self):
         super().stop()

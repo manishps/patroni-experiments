@@ -9,6 +9,7 @@ pe/results
 pe/runner/tmp
 .vscode
 **/.DS_Store
+client_times.out
 
 ####### AUTO-FILLED PYTHON STUFF BELOW ######
 # Byte-compiled / optimized / DLL files

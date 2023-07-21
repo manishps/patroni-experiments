@@ -4,9 +4,10 @@ import time
 import yaml
 import requests
 from configparser import ConfigParser
+from multiprocessing import Process
 from pe.config.parse import AgentConfig, NodeConfig, ProxyConfig, TopologyConfig
 from pe.exceptions import BootError
-from pe.runner.api import Api
+from pe.runner.api import Api, do_start
 from pe.utils import kill_process_on_port, ROOT_DIR, replace_strs
 
 class Agent():
@@ -26,20 +27,8 @@ class Agent():
         if self.is_local:
             # If this agent is local, restart the Flask server locally
             kill_process_on_port(self.api.port)
-            if self.verbose:
-                subprocess.Popen([
-                    "python3",
-                    os.path.join(ROOT_DIR, "runner", "api.py"),
-                    self.api.host,
-                    str(self.api.port)
-                ])
-            else:
-                subprocess.Popen([
-                    "python3",
-                    os.path.join(ROOT_DIR, "runner", "api.py"),
-                    self.api.host,
-                    str(self.api.port)
-                ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            p = Process(target=do_start, args=(self.api.host, self.api.port, self.verbose))
+            p.start()
         # Ensure the flask server is up
         MAX_RETRIES = 10
         DELAY = 0.5
