@@ -1,6 +1,6 @@
 # Setup
 
-This document outlines how to use this repository and the Nutanix Cloud to begin experimenting with HA Postgres yourself.
+This document outlines how to use this repository and the Nutanix Cloud Platform to begin experimenting with HA Postgres yourself.
 
 # 1. Configuration
 
