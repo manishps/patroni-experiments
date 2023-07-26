@@ -13,7 +13,7 @@ To change the `etcd` settings, you'll need to edit `EtcdController` in `pe/runne
 
 ## 1.1 Playing With the Topology
 
-Part of the beauty of this testing framework is that it's agnostic as to whether you're running it locally or on the Nutanix Cloud. Simply copy `pe/config/topology.example.yml` into a new file and edit it to match whatever setup you want to play around with. It's recommended that you start testing a given configuration locally, to ensure everything works as expected, and then move on to distributing the nodes across an actual cluster.
+Part of the beauty of this testing framework is that it's agnostic as to whether you're running it locally or on the Nutanix Cloud Platform. Simply copy `pe/config/topology.example.yml` into a new file and edit it to match whatever setup you want to play around with. It's recommended that you start testing a given configuration locally, to ensure everything works as expected, and then move on to distributing the nodes across an actual cluster.
 
 Topology configuration files have a couple important parts, explained in comments below (`pe/config/topology.example.yml`):
 
